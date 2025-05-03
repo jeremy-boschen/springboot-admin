@@ -28,6 +28,18 @@ export function useServiceDetails(serviceId: string | null) {
     queryKey: ['/api/services', serviceId, 'logs'],
     enabled: !!serviceId,
     refetchInterval: 10000, // Refresh every 10 seconds
+    queryFn: async () => {
+      if (!serviceId) throw new Error('Service ID is required');
+      
+      const response = await fetch(`/api/services/${serviceId}/logs`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch logs');
+      }
+      
+      const logs = await response.json();
+      console.log('Service logs response:', logs);
+      return logs as Log[];
+    }
   });
 
   const metricsQuery = useQuery<{
@@ -38,6 +50,18 @@ export function useServiceDetails(serviceId: string | null) {
     queryKey: ['/api/services', serviceId, 'metrics'],
     enabled: !!serviceId,
     refetchInterval: 10000, // Refresh every 10 seconds
+    queryFn: async () => {
+      if (!serviceId) throw new Error('Service ID is required');
+      
+      const response = await fetch(`/api/services/${serviceId}/metrics`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch metrics');
+      }
+      
+      const metrics = await response.json();
+      console.log('Service metrics response:', metrics);
+      return metrics;
+    }
   });
 
   const isLoading = serviceQuery.isLoading || logsQuery.isLoading || metricsQuery.isLoading;
