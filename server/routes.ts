@@ -393,11 +393,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   const httpServer = createServer(app);
   
-  // Setup WebSocket server for real-time logs if enabled
+  /**
+   * WebSocket Server Implementation for Real-time Log Streaming
+   *
+   * This section sets up a WebSocket server to provide real-time log streaming capabilities.
+   * The implementation includes:
+   * 
+   * 1. A WebSocket server attached to the existing HTTP server on path '/ws'
+   * 2. Client subscription management (clients can subscribe to specific service IDs)
+   * 3. Broadcast mechanism to send logs only to clients interested in specific services
+   * 4. Extension of the log collection process to broadcast new logs as they arrive
+   * 
+   * The WebSocket protocol supports the following message types:
+   * - 'subscribe': Client requests to receive logs for a specific service
+   * - 'unsubscribe': Client requests to stop receiving logs for a service
+   * 
+   * Messages sent to clients:
+   * - 'logs': Server sends log entries for services the client has subscribed to
+   */
   if (config.logs.websocketEnabled) {
+    // Create WebSocket server on '/ws' path to avoid conflicts with Vite HMR
     const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
     
     // Track connected clients and their subscribed service IDs
+    // This map allows targeting log broadcasts only to interested clients
     const clients = new Map<WebSocket, Set<number>>();
     
     wss.on('connection', (ws) => {

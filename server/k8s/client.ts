@@ -77,7 +77,24 @@ const MOCK_SERVICES = [
   }
 ];
 
-// Create and configure Kubernetes client
+/**
+ * Kubernetes Client for Spring Boot Service Discovery and Management
+ * 
+ * This class provides an interface to the Kubernetes API for discovering and
+ * managing Spring Boot services running in a Kubernetes cluster. It supports:
+ * 
+ * - Auto-detection of Spring Boot applications in any namespace
+ * - Listing of namespaces, pods, and services
+ * - Viewing logs from Kubernetes pods
+ * - Restarting deployments when needed
+ * 
+ * The client operates in two modes:
+ * 1. Real cluster mode: Connects to a Kubernetes cluster using available credentials
+ * 2. Development mode: Uses mock data for offline development and testing
+ * 
+ * Configuration is pulled from the application config file and can be adjusted
+ * to specify namespaces, kubeconfig paths, and authentication methods.
+ */
 export class KubernetesClient {
   private useRealCluster: boolean;
   private k8sApi: k8s.CoreV1Api | null = null;
@@ -124,7 +141,11 @@ export class KubernetesClient {
     }
   }
 
-  // List all namespaces
+  /**
+   * Lists all namespaces in the Kubernetes cluster
+   * 
+   * @returns An array of namespace objects containing metadata and status
+   */
   async listNamespaces() {
     if (this.useRealCluster && this.k8sApi) {
       try {
@@ -139,7 +160,12 @@ export class KubernetesClient {
     }
   }
 
-  // List all pods in a namespace or across all namespaces
+  /**
+   * Lists all pods in a specified namespace or across all namespaces
+   * 
+   * @param namespace Optional namespace to filter pods by
+   * @returns Array of pod objects with metadata and status information
+   */
   async listPods(namespace?: string) {
     if (this.useRealCluster && this.k8sApi) {
       try {
@@ -163,7 +189,12 @@ export class KubernetesClient {
     }
   }
 
-  // List all services in a namespace or across all namespaces
+  /**
+   * Lists all Kubernetes services in a specified namespace or across all namespaces
+   * 
+   * @param namespace Optional namespace to filter services by
+   * @returns Array of service objects with metadata and spec information
+   */
   async listServices(namespace?: string) {
     if (this.useRealCluster && this.k8sApi) {
       try {
