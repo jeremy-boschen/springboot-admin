@@ -1,62 +1,64 @@
-# Multi-stage build for smaller final image
-
-# Stage 1: Build the application
+# ─────────────────────────────────────────────────────
+# 🧱 Stage 1: Builder
+# - Installs all dependencies
+# - Builds both client (Vite) and server (esbuild)
+# - Prunes devDependencies before handing off to final stage
+# ─────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
 
+# Set working directory in the builder container
 WORKDIR /app
 
-# Copy package files and install dependencies
-COPY package*.json ./
+# Copy only files needed to install dependencies first (for better Docker layer caching)
+COPY package.json package-lock.json ./
+
+# Install ALL dependencies (prod + dev)
 RUN npm ci
 
-# Copy the source code
+# Copy the rest of the application code
 COPY . .
 
-# Set environment to production for the build
-ENV NODE_ENV=production
+# Build the frontend with Vite and backend with esbuild
+RUN npm run build
 
-# Build the client with Vite
-RUN NODE_ENV=production npm run build
+# Remove devDependencies — leaves only production deps in node_modules
+RUN npm prune --production
 
-# Build the server separately using our production entry point
-RUN NODE_ENV=production npx esbuild server/production.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/server.js
+# ─────────────────────────────────────────────────────
+# 🚀 Stage 2: Runtime
+# - Copies only the compiled output and pruned dependencies
+# - Uses a non-root user for security
+# - Exposes app and debug ports
+# ─────────────────────────────────────────────────────
+FROM node:20-alpine
 
-# Stage 2: Create the production image
-FROM node:20-alpine AS production
-
+# Set the working directory in the runtime container
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-
-# Install only production dependencies
-RUN npm ci --only=production
+# Create a non-root user and group for safer container execution
+RUN addgroup -S app && adduser -S app -G app
 
 # Add configuration
 COPY config.yaml /app/config.yaml
 
-# Create a simpler structure for production
-# Our production.ts file looks for static files in /app/public
-RUN mkdir -p /app/public
+# Copy production node_modules, compiled app, and manifest
+COPY --from=builder --chown=app:app /app/dist ./dist
+COPY --from=builder --chown=app:app /app/package.json ./
+COPY --from=builder --chown=app:app /app/node_modules ./node_modules
 
-# Copy server file (built with esbuild)
-COPY --from=builder /app/dist/server.js ./dist/server.js
+# Change ownership of app files to the non-root user
+RUN chown app:app /app
 
-# Copy static files for the client (built with Vite) to the directory our production server expects
-COPY --from=builder /app/dist/public/* ./public/
+# Switch to the non-root user
+USER app
 
-# Set environment variables
+# Define the runtime environment
 ENV NODE_ENV=production
-ENV PORT=3000
 
-# Create a non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-RUN chown -R appuser:appgroup /app
-USER appuser
+# Document the ports used:
+# - 3000: your main application
+# - 9229: Node.js debugger
+EXPOSE 3000 9229
 
-# Expose the port
-EXPOSE 3000
-
-# Start the application using the correct path to the server bundle
-#CMD ["node", "dist/index.js"]
-CMD ["node", "--inspect=0.0.0.0:9229", "dist/server.js"]
+# Default command for production (Skaffold will override this in debug mode)
+CMD ["node", "dist/server.js"]

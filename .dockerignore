@@ -1,0 +1,40 @@
+# Node
+node_modules
+npm-debug.log
+.yarn
+.pnpm-store
+
+# Build output
+dist
+build
+coverage
+
+# Editor/OS metadata
+.idea
+.vscode
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# TypeScript artifacts (if not bundled)
+*.tsbuildinfo
+
+# Local environment/config
+.env
+.env.*
+docker-compose.*
+*.local.*
+
+# Test output / snapshots
+*.test.*
+*.spec.*
+__tests__/
+__mocks__/
+*.snap
+
+# Replit
+.replit
+.replit.nix

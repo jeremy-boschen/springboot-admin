@@ -1,6 +1,50 @@
-node_modules
-dist
-.DS_Store
-server/public
-vite.config.ts.*
+# ───── Node Modules ─────
+node_modules/
+
+# ───── Build Artifacts ─────
+dist/
+build/
 *.tar.gz
+
+# ───── Local Environment Config ─────
+.env
+.env.*
+!.env.example
+
+# ───── OS-Specific ─────
+.DS_Store
+Thumbs.db
+
+# ───── Editor/IDE ─────
+
+# Ignore all of .idea except run configurations
+.idea/*
+!.idea/runConfigurations/
+!.idea/runConfigurations/*.xml
+
+# Optional: include project settings if useful
+!.idea/codeStyles/
+!.idea/codeStyles/*.xml
+
+# ───── Logs & Temp ─────
+npm-debug.log*
+*.log
+*.pid
+*.swp
+*.tmp
+*.bak
+
+# ───── Public Output ─────
+server/public/
+
+# ───── TypeScript ─────
+*.tsbuildinfo
+
+# ───── Vite ─────
+vite.config.ts.*
+.vite/
+
+# ───── Docker & Skaffold ─────
+.docker/
+.kube/
+.skaffold/

@@ -47,8 +47,8 @@ app.use((req, res, next) => {
 
 // Production static file serving
 function serveStatic(app: express.Express) {
-  // In a Docker container, look for files in the /app/public directory
-  const publicPath = path.resolve(process.cwd(), "public");
+  // In a Docker container, look for files in the /app/dist/public directory
+  const publicPath = path.resolve(process.cwd(), "dist/public");
   
   if (!fs.existsSync(publicPath)) {
     throw new Error(

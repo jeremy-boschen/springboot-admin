@@ -14,7 +14,12 @@ build:
     push: false
 manifests:
   rawYaml:
+    - k8s/configmap.yaml
+    - k8s/rbac.yaml
     - k8s/deployment.yaml
+    - k8s/service.yaml
+    - k8s/ingress.yaml
+
 deploy:
   kubectl: {}
 portForward:
@@ -22,3 +27,15 @@ portForward:
     resourceName: k8s-springboot-dashboard
     port: 9229
     localPort: 9229
+
+profiles:
+  - name: debug
+    activation:
+      - command: dev
+    manifests:
+      rawYaml:
+        - k8s/configmap.yaml
+        - k8s/rbac.yaml
+        - k8s/deployment-debug.yaml
+        - k8s/service.yaml
+        - k8s/ingress.yaml

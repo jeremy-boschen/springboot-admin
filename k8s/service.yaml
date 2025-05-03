@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: k8s-springboot-dashboard
+  labels:
+    app: k8s-springboot-dashboard
+spec:
+  ports:
+    - port: 80
+      targetPort: 3000
+      protocol: TCP
+      name: http
+    - port: 9229
+      targetPort: 9229
+      protocol: TCP
+      name: debug
+  selector:
+    app: k8s-springboot-dashboard
+  type: ClusterIP

@@ -4,7 +4,7 @@ server:
 
 kubernetes:
   inCluster: true
-  kubeconfig: c:/Users/NewtyCoffee/.kube/config # Optional, uses in-cluster config if not specified
+  #kubeconfig: c:/Users/NewtyCoffee/.kube/config # Optional, uses in-cluster config if not specified
   # namespace: default               # Optional, watches all namespaces if not specified
   serviceDiscoveryInterval: 60000    # milliseconds
 

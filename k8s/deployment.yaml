@@ -1,41 +1,3 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: k8s-springboot-dashboard-config
-  labels:
-    app: k8s-springboot-dashboard
-data:
-  config.yaml: |
-    server:
-      port: 3000
-      host: 0.0.0.0
-
-    kubernetes:
-      inCluster: true
-      # namespace: default  # Optional, watches all namespaces if not specified
-      serviceDiscoveryInterval: 60000    # milliseconds
-
-    actuator:
-      defaultPort: 8080
-      basePath: /actuator
-      endpoints:
-        health: /health
-        info: /info
-        metrics: /metrics
-        logfile: /logfile
-      managementPortAnnotation: spring-boot/management-port
-      managementContextPathAnnotation: spring-boot/management-context-path
-
-    metrics:
-      collectionInterval: 30000         # milliseconds
-      retention:
-        days: 7
-        maxEntries: 1000
-
-    logging:
-      level: info                        # debug, info, warn, error
-
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -60,6 +22,8 @@ spec:
         ports:
         - containerPort: 3000
           name: http
+        - containerPort: 9229
+          name: debug
         env:
         - name: NODE_ENV
           value: "production"
@@ -91,59 +55,3 @@ spec:
       - name: config-volume
         configMap:
           name: k8s-springboot-dashboard-config
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: k8s-springboot-dashboard
-  labels:
-    app: k8s-springboot-dashboard
-spec:
-  ports:
-  - port: 80
-    targetPort: 3000
-    protocol: TCP
-    name: http
-  selector:
-    app: k8s-springboot-dashboard
-  type: ClusterIP
-
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: k8s-springboot-dashboard-sa
-  labels:
-    app: k8s-springboot-dashboard
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: k8s-springboot-dashboard-role
-  labels:
-    app: k8s-springboot-dashboard
-rules:
-- apiGroups: [""]
-  resources: ["namespaces", "pods", "services"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["apps"]
-  resources: ["deployments"]
-  verbs: ["get", "list", "watch", "patch"]
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: k8s-springboot-dashboard-binding
-  labels:
-    app: k8s-springboot-dashboard
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: k8s-springboot-dashboard-role
-subjects:
-- kind: ServiceAccount
-  name: k8s-springboot-dashboard-sa
-  namespace: default
