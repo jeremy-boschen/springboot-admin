@@ -33,11 +33,14 @@ RUN npm ci --only=production
 # Add configuration
 COPY config.yaml /app/config.yaml
 
-# Copy server file (built with esbuild)
-COPY --from=builder /app/dist/index.js ./server.js
+# Create dist directory structure expected by server/vite.ts
+RUN mkdir -p /app/dist/public
 
-# Copy static files for the client (built with Vite)
-COPY --from=builder /app/dist/public ./public
+# Copy server file (built with esbuild)
+COPY --from=builder /app/dist/index.js ./dist/index.js
+
+# Copy static files for the client (built with Vite) to match expected path
+COPY --from=builder /app/dist/public ./dist/public
 
 # Set environment variables
 ENV NODE_ENV=production
@@ -51,5 +54,5 @@ USER appuser
 # Expose the port
 EXPOSE 3000
 
-# Start the application
-CMD ["node", "server.js"]
+# Start the application using the correct path to the server bundle
+CMD ["node", "dist/index.js"]
