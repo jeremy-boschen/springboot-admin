@@ -237,15 +237,16 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
           </p>
         </CardHeader>
         <CardContent>
-          {/* Add debug info to see what's happening */}
-          <div className="mb-4 text-xs text-muted-foreground">
-            Debug: Service ID is {service.id} (type: {typeof service.id})
-          </div>
-          
-          {service.id ? (
+          {/* Check if we have a valid service ID */}
+          {typeof service.id === 'number' ? (
             <LogLevelManager serviceId={service.id} />
           ) : (
-            <p className="text-sm text-muted-foreground">Service ID not available</p>
+            <div className="py-4">
+              <div className="animate-pulse flex justify-center">
+                <div className="h-4 w-28 bg-gray-300 dark:bg-gray-700 rounded"></div>
+              </div>
+              <p className="text-sm text-center text-muted-foreground mt-2">Loading logger data...</p>
+            </div>
           )}
         </CardContent>
       </Card>
