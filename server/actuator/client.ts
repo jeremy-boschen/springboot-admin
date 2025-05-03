@@ -94,8 +94,8 @@ export class ActuatorClient {
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
-    // Enable mock data for development
-    this.useMockData = true;
+    // Use mock data based on the Kubernetes config
+    this.useMockData = !config.kubernetes.inCluster;
     
     // Use endpoints from config
     this.actuatorBasePath = config.actuator.basePath;
