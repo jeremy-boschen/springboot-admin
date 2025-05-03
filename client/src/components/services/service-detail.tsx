@@ -8,11 +8,13 @@ import { MetricsChart } from "@/components/services/metrics-chart";
 import { LogTable } from "@/components/services/log-table";
 import { LogLevelManager } from "@/components/services/log-level-manager";
 import { ConfigManager } from "@/components/services/config-manager-new";
+import { FullscreenLogs } from "@/components/services/fullscreen-logs";
+import { useWebSocketLogs } from "@/hooks/use-websocket-logs";
 import { getStatusColor, getResourceUtilizationClass } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { 
   ArrowLeft, RefreshCw, Power, ChevronDown, ChevronUp, 
-  Search, X, Filter, Settings 
+  Search, X, Filter, Settings, Maximize2, Wifi, WifiOff
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
@@ -20,6 +22,8 @@ import { Input } from "@/components/ui/input";
 export function ServiceDetail({ service, onBack, refreshService }: ServiceDetailProps) {
   const [logLevel, setLogLevel] = useState("ALL");
   const [logSearch, setLogSearch] = useState("");
+  const [showFullscreenLogs, setShowFullscreenLogs] = useState(false);
+  const [realtimeLogs, setRealtimeLogs] = useState(false);
   const statusColor = getStatusColor(service.status);
   
   // State for collapsible sections
@@ -28,6 +32,18 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
   const [logLevelOpen, setLogLevelOpen] = useState(true);
   const [configOpen, setConfigOpen] = useState(true);
   const [logsOpen, setLogsOpen] = useState(true);
+  
+  // Set up WebSocket for real-time logs
+  const {
+    logs: wsLogs,
+    isConnected,
+    error: wsError,
+    clearLogs,
+    reconnect
+  } = useWebSocketLogs({
+    serviceId: service.id,
+    enabled: realtimeLogs
+  });
   
   const memoryPercentage = service.memory 
     ? (service.memory.used / service.memory.max) * 100
