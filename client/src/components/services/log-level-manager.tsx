@@ -13,9 +13,10 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { getLogLevelColor } from '@/lib/utils';
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 interface LogLevelManagerProps {
-  serviceId: number;
+  serviceId: number | string;
 }
 
 export function LogLevelManager({ serviceId }: LogLevelManagerProps) {

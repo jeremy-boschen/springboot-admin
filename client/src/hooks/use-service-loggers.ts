@@ -19,7 +19,7 @@ interface SetLogLevelParams {
   level: string;
 }
 
-export function useServiceLoggers(serviceId: number | null) {
+export function useServiceLoggers(serviceId: number | string | null) {
   const [selectedLogger, setSelectedLogger] = useState<string | null>(null);
   
   // Fetch loggers
