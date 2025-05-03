@@ -1,0 +1,24 @@
+apiVersion: skaffold/v4beta6
+kind: Config
+metadata:
+  name: k8s-springboot-dashboard
+build:
+  artifacts:
+    - image: k8s-springboot-dashboard
+      context: .
+      docker:
+        dockerfile: Dockerfile
+  tagPolicy:
+    sha256: {}
+  local:
+    push: false
+manifests:
+  rawYaml:
+    - k8s/deployment.yaml
+deploy:
+  kubectl: {}
+portForward:
+  - resourceType: deployment
+    resourceName: k8s-springboot-dashboard
+    port: 9229
+    localPort: 9229

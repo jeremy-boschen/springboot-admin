@@ -6,7 +6,7 @@ import config from '../config';
 
 // Labels and annotations to identify Spring Boot services
 const SPRING_BOOT_LABELS = [
-  'app.kubernetes.io/part-of=spring-boot',
+  'app.k8s.io/part-of=spring-boot',
   'app=spring-boot',
   'spring-boot=true',
 ];
@@ -221,7 +221,7 @@ async function processDiscoveredPod(pod: any) {
     
     // Create or update the service
     const serviceData: InsertService = {
-      name: pod.metadata?.labels?.['app.kubernetes.io/name'] || 
+      name: pod.metadata?.labels?.['app.k8s.io/name'] ||
             pod.metadata?.labels?.['app'] || 
             podName,
       namespace,
@@ -247,7 +247,7 @@ async function processDiscoveredPod(pod: any) {
     
     // Register the service as DOWN if we couldn't reach it
     const serviceData: InsertService = {
-      name: pod.metadata?.labels?.['app.kubernetes.io/name'] || 
+      name: pod.metadata?.labels?.['app.k8s.io/name'] ||
             pod.metadata?.labels?.['app'] || 
             podName,
       namespace,

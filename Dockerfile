@@ -19,7 +19,7 @@ ENV NODE_ENV=production
 RUN NODE_ENV=production npm run build
 
 # Build the server separately using our production entry point
-RUN NODE_ENV=production npx esbuild server/production.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/index.js
+RUN NODE_ENV=production npx esbuild server/production.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/server.js
 
 # Stage 2: Create the production image
 FROM node:20-alpine AS production
@@ -39,7 +39,7 @@ COPY config.yaml /app/config.yaml
 RUN mkdir -p /app/dist/public
 
 # Copy server file (built with esbuild)
-COPY --from=builder /app/dist/index.js ./dist/index.js
+COPY --from=builder /app/dist/server.js ./dist/server.js
 
 # Copy static files for the client (built with Vite) to match expected path
 COPY --from=builder /app/dist/public ./dist/public
@@ -57,4 +57,5 @@ USER appuser
 EXPOSE 3000
 
 # Start the application using the correct path to the server bundle
-CMD ["node", "dist/index.js"]
+#CMD ["node", "dist/index.js"]
+CMD ["node", "--inspect=0.0.0.0:9229", "dist/server.js"]

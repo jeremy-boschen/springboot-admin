@@ -117,6 +117,7 @@ export class KubernetesClient {
             // Tries to load from kube config in cluster
             kc.loadFromCluster();
             console.log('Running in cluster mode, using in-cluster config');
+            console.log('Current cluster:', kc.getCurrentCluster());
           } catch (error) {
             // Fallback to local config for development
             console.log('Unable to load in-cluster config, using local config');
@@ -150,7 +151,7 @@ export class KubernetesClient {
     if (this.useRealCluster && this.k8sApi) {
       try {
         const response = await this.k8sApi.listNamespace();
-        return response.body.items;
+        return response.items;
       } catch (error) {
         console.error('Error listing namespaces:', error);
         return MOCK_NAMESPACES;
@@ -171,10 +172,10 @@ export class KubernetesClient {
       try {
         if (namespace) {
           const response = await this.k8sApi.listNamespacedPod(namespace);
-          return response.body.items;
+          return response.items;
         } else {
           const response = await this.k8sApi.listPodForAllNamespaces();
-          return response.body.items;
+          return response.items;
         }
       } catch (error) {
         console.error('Error listing pods:', error);
@@ -200,10 +201,10 @@ export class KubernetesClient {
       try {
         if (namespace) {
           const response = await this.k8sApi.listNamespacedService(namespace);
-          return response.body.items;
+          return response.items;
         } else {
           const response = await this.k8sApi.listServiceForAllNamespaces();
-          return response.body.items;
+          return response.items;
         }
       } catch (error) {
         console.error('Error listing services:', error);
@@ -222,7 +223,7 @@ export class KubernetesClient {
    * Restarts a Kubernetes deployment by adding a restart annotation
    * 
    * This method triggers a rolling restart of a deployment by adding or updating
-   * the "kubectl.kubernetes.io/restartedAt" annotation with the current timestamp,
+   * the "kubectl.k8s.io/restartedAt" annotation with the current timestamp,
    * which causes Kubernetes to recreate all pods in the deployment without changing
    * any configuration.
    * 
@@ -237,7 +238,7 @@ export class KubernetesClient {
         const patch = [
           {
             op: 'add',
-            path: '/spec/template/metadata/annotations/kubectl.kubernetes.io~1restartedAt',
+            path: '/spec/template/metadata/annotations/kubectl.k8s.io~1restartedAt',
             value: new Date().toISOString()
           }
         ];
