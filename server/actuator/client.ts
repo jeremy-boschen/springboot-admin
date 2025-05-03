@@ -1,4 +1,5 @@
 import axios from 'axios';
+import config from '../config';
 
 // Mock data for development
 const MOCK_HEALTH_DATA = {
@@ -83,13 +84,33 @@ const MOCK_LOGS = [
 export class ActuatorClient {
   private baseUrl: string;
   private useMockData: boolean = true;
+  private actuatorBasePath: string;
+  private endpoints: {
+    health: string;
+    info: string;
+    metrics: string;
+    logfile: string;
+  };
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
     // Enable mock data for development
     this.useMockData = true;
+    
+    // Use endpoints from config
+    this.actuatorBasePath = config.actuator.basePath;
+    this.endpoints = config.actuator.endpoints;
   }
 
+  /**
+   * Builds the full actuator endpoint URL
+   * @param endpoint The endpoint path from configuration
+   * @returns Full URL to the actuator endpoint
+   */
+  private getEndpointUrl(endpoint: string): string {
+    return `${this.baseUrl}${this.actuatorBasePath}${endpoint}`;
+  }
+  
   // Get health check information
   async getHealth() {
     if (this.useMockData) {
@@ -98,7 +119,10 @@ export class ActuatorClient {
     }
     
     try {
-      const response = await axios.get(`${this.baseUrl}/health`, {
+      const url = this.getEndpointUrl(this.endpoints.health);
+      console.log(`Fetching health from: ${url}`);
+      
+      const response = await axios.get(url, {
         timeout: 3000,
         validateStatus: () => true // Accept any status to handle DOWN states
       });
@@ -117,7 +141,10 @@ export class ActuatorClient {
     }
     
     try {
-      const response = await axios.get(`${this.baseUrl}/info`, { timeout: 2000 });
+      const url = this.getEndpointUrl(this.endpoints.info);
+      console.log(`Fetching info from: ${url}`);
+      
+      const response = await axios.get(url, { timeout: 2000 });
       return response.data;
     } catch (error) {
       console.error('Error fetching info data:', error);
@@ -134,7 +161,10 @@ export class ActuatorClient {
     
     try {
       // First get available metric names
-      const metricsResponse = await axios.get(`${this.baseUrl}/metrics`, { timeout: 3000 });
+      const metricsUrl = this.getEndpointUrl(this.endpoints.metrics);
+      console.log(`Fetching metrics from: ${metricsUrl}`);
+      
+      const metricsResponse = await axios.get(metricsUrl, { timeout: 3000 });
       const availableMetrics = metricsResponse.data.names || [];
 
       // Collect the metrics we're interested in
@@ -142,24 +172,28 @@ export class ActuatorClient {
       
       // Memory metrics
       if (availableMetrics.includes('jvm.memory.used')) {
-        const memoryUsedResponse = await axios.get(`${this.baseUrl}/metrics/jvm.memory.used`, { timeout: 2000 });
+        const memoryUsedUrl = `${metricsUrl}/jvm.memory.used`;
+        const memoryUsedResponse = await axios.get(memoryUsedUrl, { timeout: 2000 });
         metrics.memoryUsed = memoryUsedResponse.data;
       }
       
       if (availableMetrics.includes('jvm.memory.max')) {
-        const memoryMaxResponse = await axios.get(`${this.baseUrl}/metrics/jvm.memory.max`, { timeout: 2000 });
+        const memoryMaxUrl = `${metricsUrl}/jvm.memory.max`;
+        const memoryMaxResponse = await axios.get(memoryMaxUrl, { timeout: 2000 });
         metrics.memoryMax = memoryMaxResponse.data;
       }
       
       // CPU metrics
       if (availableMetrics.includes('process.cpu.usage')) {
-        const cpuResponse = await axios.get(`${this.baseUrl}/metrics/process.cpu.usage`, { timeout: 2000 });
+        const cpuUrl = `${metricsUrl}/process.cpu.usage`;
+        const cpuResponse = await axios.get(cpuUrl, { timeout: 2000 });
         metrics.cpuUsage = cpuResponse.data;
       }
       
       // HTTP metrics (errors)
       if (availableMetrics.includes('http.server.requests')) {
-        const httpResponse = await axios.get(`${this.baseUrl}/metrics/http.server.requests`, { timeout: 2000 });
+        const httpUrl = `${metricsUrl}/http.server.requests`;
+        const httpResponse = await axios.get(httpUrl, { timeout: 2000 });
         metrics.httpRequests = httpResponse.data;
       }
       
@@ -180,7 +214,10 @@ export class ActuatorClient {
     
     try {
       // Try to access logfile endpoint (if configured)
-      const response = await axios.get(`${this.baseUrl}/logfile`, { 
+      const logfileUrl = this.getEndpointUrl(this.endpoints.logfile);
+      console.log(`Fetching logs from: ${logfileUrl}`);
+      
+      const response = await axios.get(logfileUrl, { 
         timeout: 5000,
         validateStatus: (status) => status < 500 // Accept 404s
       });
@@ -191,8 +228,9 @@ export class ActuatorClient {
         return logLines.slice(-limit);
       }
       
-      // If logfile not available, try using loggers
-      const loggersResponse = await axios.get(`${this.baseUrl}/loggers`, { timeout: 2000 });
+      // If logfile not available, try using loggers endpoint
+      const loggersUrl = `${this.baseUrl}${this.actuatorBasePath}/loggers`;
+      const loggersResponse = await axios.get(loggersUrl, { timeout: 2000 });
       
       return {
         message: 'Log file not directly accessible, using logger configuration',
