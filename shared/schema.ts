@@ -88,3 +88,44 @@ export interface MetricTrend {
   timestamp: Date;
   value: number;
 }
+
+// Configuration property types
+export const PropertyTypeEnum = z.enum(["STRING", "NUMBER", "BOOLEAN", "ARRAY", "MAP", "JSON", "YAML"]);
+export type PropertyType = z.infer<typeof PropertyTypeEnum>;
+
+// User types
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  displayName: text("display_name"),
+  email: text("email"),
+  passwordHash: text("password_hash"),
+  role: text("role", { enum: ["admin", "user"] }).notNull().default("user")
+});
+
+export const insertUserSchema = createInsertSchema(users).omit({ 
+  id: true
+});
+
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export const configProperties = pgTable("config_properties", {
+  id: serial("id").primaryKey(),
+  serviceId: integer("service_id").notNull().references(() => services.id, { onDelete: "cascade" }),
+  key: text("key").notNull(),
+  value: text("value").notNull(),
+  type: text("type", { enum: ["STRING", "NUMBER", "BOOLEAN", "ARRAY", "MAP", "JSON", "YAML"] }).notNull().default("STRING"),
+  description: text("description"),
+  source: text("source").notNull().default("application.properties"),
+  isActive: boolean("is_active").notNull().default(true),
+  lastUpdated: timestamp("last_updated").defaultNow()
+});
+
+export const insertConfigPropertySchema = createInsertSchema(configProperties).omit({ 
+  id: true,
+  lastUpdated: true
+});
+
+export type ConfigProperty = typeof configProperties.$inferSelect;
+export type InsertConfigProperty = z.infer<typeof insertConfigPropertySchema>;

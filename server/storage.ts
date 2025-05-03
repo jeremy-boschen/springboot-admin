@@ -7,7 +7,9 @@ import {
   Service, 
   Metric, 
   Log, 
-  ServiceStatus 
+  ServiceStatus,
+  ConfigProperty,
+  InsertConfigProperty
 } from "@shared/schema";
 
 export interface IStorage {
@@ -32,6 +34,13 @@ export interface IStorage {
   // Logs methods
   getLogsForService(serviceId: number, limit?: number): Promise<Log[]>;
   createLog(log: InsertLog): Promise<Log>;
+  
+  // Configuration methods
+  getConfigPropertiesForService(serviceId: number): Promise<ConfigProperty[]>;
+  getConfigProperty(id: number): Promise<ConfigProperty | undefined>;
+  createConfigProperty(property: InsertConfigProperty): Promise<ConfigProperty>;
+  updateConfigProperty(id: number, data: Partial<InsertConfigProperty>): Promise<ConfigProperty>;
+  deleteConfigProperty(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -39,22 +48,26 @@ export class MemStorage implements IStorage {
   private services: Map<number, Service>;
   private metrics: Map<number, Metric[]>;
   private logs: Map<number, Log[]>;
+  private configProperties: Map<number, ConfigProperty[]>;
   
   private currentUserId: number;
   private currentServiceId: number;
   private currentMetricId: number;
   private currentLogId: number;
+  private currentConfigPropertyId: number;
 
   constructor() {
     this.users = new Map();
     this.services = new Map();
     this.metrics = new Map();
     this.logs = new Map();
+    this.configProperties = new Map();
     
     this.currentUserId = 1;
     this.currentServiceId = 1;
     this.currentMetricId = 1;
     this.currentLogId = 1;
+    this.currentConfigPropertyId = 1;
   }
 
   // User methods
@@ -178,6 +191,72 @@ export class MemStorage implements IStorage {
     this.logs.set(insertLog.serviceId, serviceLogs);
     
     return log;
+  }
+  
+  // Configuration methods
+  async getConfigPropertiesForService(serviceId: number): Promise<ConfigProperty[]> {
+    return this.configProperties.get(serviceId) || [];
+  }
+  
+  async getConfigProperty(id: number): Promise<ConfigProperty | undefined> {
+    for (const [_, properties] of this.configProperties.entries()) {
+      const property = properties.find(prop => prop.id === id);
+      if (property) {
+        return property;
+      }
+    }
+    return undefined;
+  }
+  
+  async createConfigProperty(insertProperty: InsertConfigProperty): Promise<ConfigProperty> {
+    const id = this.currentConfigPropertyId++;
+    const property: ConfigProperty = {
+      ...insertProperty,
+      id,
+      lastUpdated: new Date()
+    };
+    
+    const serviceProperties = this.configProperties.get(insertProperty.serviceId) || [];
+    serviceProperties.push(property);
+    this.configProperties.set(insertProperty.serviceId, serviceProperties);
+    
+    return property;
+  }
+  
+  async updateConfigProperty(id: number, data: Partial<InsertConfigProperty>): Promise<ConfigProperty> {
+    // Find the property to update
+    for (const [serviceId, properties] of this.configProperties.entries()) {
+      const index = properties.findIndex(prop => prop.id === id);
+      if (index !== -1) {
+        const property = properties[index];
+        const updatedProperty: ConfigProperty = {
+          ...property,
+          ...data,
+          lastUpdated: new Date()
+        };
+        
+        // Update the property in the array
+        const updatedProperties = [...properties];
+        updatedProperties[index] = updatedProperty;
+        this.configProperties.set(serviceId, updatedProperties);
+        
+        return updatedProperty;
+      }
+    }
+    
+    throw new Error(`Config property with id ${id} not found`);
+  }
+  
+  async deleteConfigProperty(id: number): Promise<void> {
+    for (const [serviceId, properties] of this.configProperties.entries()) {
+      const updatedProperties = properties.filter(prop => prop.id !== id);
+      if (updatedProperties.length !== properties.length) {
+        this.configProperties.set(serviceId, updatedProperties);
+        return;
+      }
+    }
+    
+    throw new Error(`Config property with id ${id} not found`);
   }
 }
 
