@@ -242,7 +242,33 @@ export function ServiceDetail({
               <Button 
                 size="sm"
                 className="inline-flex items-center text-white bg-primary-600 hover:bg-primary-700"
-                onClick={refreshService}
+                onClick={async () => {
+                  try {
+                    // Show loading state
+                    toast({
+                      title: "Restarting service...",
+                      description: "This may take a few moments.",
+                    });
+                    
+                    // Call the restart function
+                    const result = await refreshService();
+                    
+                    // Show success message
+                    toast({
+                      title: "Service restarted successfully",
+                      description: result?.message || "The service is being restarted. Metrics and logs will refresh shortly.",
+                      variant: "default",
+                    });
+                    
+                  } catch (error) {
+                    // Show error message
+                    toast({
+                      title: "Failed to restart service",
+                      description: error instanceof Error ? error.message : "An unexpected error occurred",
+                      variant: "destructive",
+                    });
+                  }
+                }}
               >
                 <RefreshCw className="h-4 w-4 mr-1" />
                 Restart
