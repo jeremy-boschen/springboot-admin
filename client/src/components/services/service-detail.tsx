@@ -10,12 +10,14 @@ import { LogLevelManager } from "@/components/services/log-level-manager";
 import { ConfigManager } from "@/components/services/config-manager-new";
 import { FullscreenLogs } from "@/components/services/fullscreen-logs";
 import { useWebSocketLogs } from "@/hooks/use-websocket-logs";
+import { useToast } from "@/hooks/use-toast";
 import { getStatusColor, getResourceUtilizationClass } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useLocation } from "wouter";
 import { 
   ArrowLeft, RefreshCw, Power, ChevronDown, ChevronUp, 
-  Search, X, Filter, Settings, Maximize2, Wifi, WifiOff
+  Search, X, Filter, Settings, Maximize2, Wifi, WifiOff,
+  Link, Check, Copy
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
@@ -51,6 +53,25 @@ export function ServiceDetail({
   const [showFullscreenLogs, setShowFullscreenLogs] = useState(false);
   const [realtimeLogs, setRealtimeLogs] = useState(false);
   const statusColor = getStatusColor(service.status);
+  const { toast } = useToast();
+  
+  // Function to copy section link to clipboard
+  const copySectionLink = (section: string) => {
+    const url = `${window.location.origin}/service/${service.id}/${section}`;
+    navigator.clipboard.writeText(url).then(() => {
+      toast({
+        title: "Link copied to clipboard",
+        description: `URL to the ${section} section has been copied.`,
+      });
+    }).catch(err => {
+      console.error('Failed to copy link: ', err);
+      toast({
+        title: "Failed to copy link",
+        description: "Please try again or copy the URL manually.",
+        variant: "destructive",
+      });
+    });
+  };
   
   // State for collapsible sections with deep linking support
   const [infoOpen, setInfoOpen] = useState(initialSections.info);
@@ -180,6 +201,16 @@ export function ServiceDetail({
           <CardHeader className="px-6 py-5 flex flex-row items-center justify-between">
             <div>
               <div className="flex items-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mr-2 h-8 w-8 p-0 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
+                  title="Copy link to this section"
+                  onClick={() => copySectionLink('info')}
+                >
+                  <Link className="h-4 w-4" />
+                </Button>
+                
                 <Button 
                   variant="link" 
                   className="p-0 h-auto font-medium text-lg text-gray-900 dark:text-white hover:no-underline hover:opacity-80"
@@ -256,6 +287,16 @@ export function ServiceDetail({
         <Card>
           <CardHeader className="px-6 py-5">
             <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mr-2 h-8 w-8 p-0 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
+                title="Copy link to this section"
+                onClick={() => copySectionLink('metrics')}
+              >
+                <Link className="h-4 w-4" />
+              </Button>
+              
               <Button 
                 variant="link" 
                 className="p-0 h-auto font-medium text-lg text-gray-900 dark:text-white hover:no-underline hover:opacity-80"
@@ -407,6 +448,16 @@ export function ServiceDetail({
         <Card>
           <CardHeader>
             <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mr-2 h-8 w-8 p-0 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
+                title="Copy link to this section"
+                onClick={() => copySectionLink('config')}
+              >
+                <Link className="h-4 w-4" />
+              </Button>
+              
               <Button 
                 variant="link" 
                 className="p-0 h-auto font-medium text-lg text-gray-900 dark:text-white hover:no-underline hover:opacity-80"
@@ -456,6 +507,16 @@ export function ServiceDetail({
         <Card>
           <CardHeader>
             <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mr-2 h-8 w-8 p-0 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
+                title="Copy link to this section"
+                onClick={() => copySectionLink('loglevels')}
+              >
+                <Link className="h-4 w-4" />
+              </Button>
+              
               <Button 
                 variant="link" 
                 className="p-0 h-auto font-medium text-lg text-gray-900 dark:text-white hover:no-underline hover:opacity-80"
@@ -507,6 +568,16 @@ export function ServiceDetail({
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mr-2 h-8 w-8 p-0 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
+                    title="Copy link to this section"
+                    onClick={() => copySectionLink('logs')}
+                  >
+                    <Link className="h-4 w-4" />
+                  </Button>
+                  
                   <Button 
                     variant="link" 
                     className="p-0 h-auto font-medium text-lg text-gray-900 dark:text-white hover:no-underline hover:opacity-80"
