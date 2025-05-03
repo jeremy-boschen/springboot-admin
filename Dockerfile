@@ -15,9 +15,11 @@ COPY . .
 # Set environment to production for the build
 ENV NODE_ENV=production
 
-# Build the application (both server and client)
-# We must explicitly set NODE_ENV=production for the build
+# Build the client with Vite
 RUN NODE_ENV=production npm run build
+
+# Build the server separately using our production entry point
+RUN NODE_ENV=production npx esbuild server/production.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/index.js
 
 # Stage 2: Create the production image
 FROM node:20-alpine AS production
