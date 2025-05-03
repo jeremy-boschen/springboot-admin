@@ -1,99 +1,158 @@
-# Spring Boot Kubernetes Monitor
+# Spring Boot Monitoring Dashboard
 
-A comprehensive monitoring and troubleshooting platform for Spring Boot applications deployed in Kubernetes environments. This application automatically discovers Spring Boot services, monitors their health and performance, and provides a user-friendly dashboard for rapid diagnostics and debugging.
+A comprehensive Spring Boot monitoring platform designed to simplify application management and provide actionable insights for development and operations teams.
 
-## Architecture Overview
+## Architecture
 
-### Client-Server Architecture
-The application follows a client-server architecture with the following components:
+The system consists of two main components:
 
-#### Frontend (Client)
-- Built with React and modern UI libraries (shadcn, tailwind CSS)
-- Responsive design for mobile, tablet, and desktop views
-- React Query for efficient data fetching and caching
-- Support for both light and dark themes
-- Deep linking support for shareable URLs to specific services and sections
+1. **Monitoring Dashboard** (Node.js/React)
+   - Central server with registration endpoints
+   - Real-time monitoring and visualization
+   - WebSocket-based log streaming
+   - Configuration management interface
+   - Light and dark theme support
 
-#### Backend (Server)
-- Node.js Express server
-- Kubernetes client integration for service discovery
-- Spring Boot Actuator client for metrics collection
-- WebSocket support for real-time log streaming
-- In-memory storage for development (can be extended to persistent databases)
+2. **Spring Boot Client** (Java)
+   - Auto-configuration JAR for Spring Boot applications
+   - Automatic service registration
+   - Metrics collection integration
+   - Zero configuration setup (with sensible defaults)
+   - Support for Spring Boot 2.7.x through 3.2.x
 
-#### Key Technologies
-- React for frontend UI components
-- Node.js and Express for backend API
-- Kubernetes API for service discovery
-- Spring Boot Actuator API for metrics and logs
-- WebSockets for real-time communication
-- Tailwind CSS for styling
+## Features
 
-### Data Flow
-1. **Service Discovery**: The application periodically scans Kubernetes clusters for Spring Boot services
-2. **Metrics Collection**: For each service, the app collects metrics and logs via the Spring Boot Actuator endpoints
-3. **Data Storage**: Service information, metrics, and logs are stored (in-memory by default)
-4. **Dashboard Presentation**: The frontend fetches and displays this data as interactive dashboards
-5. **Real-time Updates**: WebSockets provide real-time log streaming for monitoring
+- **Service Health Monitoring**: Real-time health status of all Spring Boot applications
+- **Metrics Dashboard**: Memory, CPU, and error metrics with historical trends
+- **Log Streaming**: Real-time log streaming from applications to the dashboard
+- **Configuration Management**: View and update application properties
+- **Self-Registration**: Applications automatically register with the dashboard
+- **Responsive Design**: Works on desktop, tablet, and mobile devices
+- **Theme Support**: Light and dark theme options
 
-### Key Features
-- Automatic service discovery in Kubernetes clusters
-- Real-time monitoring of service health, metrics, and logs
-- Configurable log levels for runtime debugging
-- Configuration property management
-- Restart capability for Kubernetes deployments
-- Full-screen log viewing with filtering and search
-- Shareable deep links to specific services and sections
+## Getting Started
 
-## Project Structure
+### Dashboard Setup
+
+1. Clone this repository
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Start the dashboard:
+   ```
+   npm run dev
+   ```
+4. Access the dashboard at http://localhost:5000
+
+### Spring Boot Application Integration
+
+1. Add the client dependency to your Spring Boot application:
+   ```xml
+   <dependency>
+     <groupId>com.example</groupId>
+     <artifactId>boot-monitoring-client</artifactId>
+     <version>1.0.0</version>
+   </dependency>
+   ```
+
+2. Add configuration to your `application.properties`:
+   ```properties
+   # Enable monitoring
+   monitor.enabled=true
+   
+   # Dashboard URL
+   monitor.dashboard-url=http://localhost:5000
+   
+   # Application ID (optional, will be generated if not provided)
+   monitor.app-id=my-application-id
+   ```
+
+3. Ensure Spring Boot Actuator is properly configured:
+   ```properties
+   # Expose all actuator endpoints
+   management.endpoints.web.exposure.include=*
+   
+   # Show detailed health information
+   management.endpoint.health.show-details=always
+   ```
+
+4. Start your Spring Boot application
+
+## Docker Deployment
+
+Build and run the dashboard using Docker:
+
+```bash
+# Build the image
+docker build -t spring-boot-monitor .
+
+# Run the container
+docker run -p 3000:3000 spring-boot-monitor
+```
+
+For Kubernetes deployment, use the provided Kubernetes manifests in the `k8s` directory.
+
+## Architecture Diagram
 
 ```
-├── client/               # React frontend
-│   ├── src/
-│   │   ├── components/   # UI components
-│   │   ├── hooks/        # Custom React hooks
-│   │   ├── lib/          # Utility functions
-│   │   ├── pages/        # Page components
-│   │   └── types/        # TypeScript type definitions
-│
-├── server/               # Node.js backend
-│   ├── actuator/         # Spring Boot Actuator client
-│   ├── k8s/              # Kubernetes integration
-│   ├── index.ts          # Server entry point
-│   ├── routes.ts         # API routes
-│   ├── storage.ts        # Data storage implementation
-│   └── config.ts         # Configuration management
-│
-└── shared/               # Shared TypeScript types
-    └── schema.ts         # Database schema definitions
+┌────────────────────┐     Register     ┌───────────────────┐
+│  Spring Boot App   │───────────────▶ │                   │
+│                    │                  │     Dashboard     │
+│  ┌──────────────┐  │ ◀───────────────│                   │
+│  │   Actuator   │  │   Health Check   │  ┌─────────────┐  │
+│  └──────────────┘  │                  │  │  WebSocket  │  │
+│                    │   Metrics/Logs   │  │   Server    │  │
+│  ┌──────────────┐  │───────────────▶ │  └─────────────┘  │
+│  │ Registration │  │                  │                   │
+│  │    Client    │  │                  │  ┌─────────────┐  │
+│  └──────────────┘  │                  │  │ React UI    │  │
+└────────────────────┘                  │  └─────────────┘  │
+                                         └───────────────────┘
 ```
 
-## Configuration
+## Dashboard Screenshots
 
-The application can be configured through the `config.yaml` file, which allows you to customize:
+### Services Overview
+![Services Overview](attached_assets/image_1746278648096.png)
 
-- Service discovery interval
-- Metrics collection frequency
-- Logging configuration
-- Kubernetes cluster settings
-- Default UI settings and theme
+### Service Detail View
+![Service Detail](attached_assets/image_1746278748666.png)
 
-## Deployment
+### Log Streaming
+![Log Streaming](attached_assets/image_1746278821059.png)
 
-For deployment in your Kubernetes environment, you'll need to:
+### Metrics Dashboard
+![Metrics Dashboard](attached_assets/image_1746280724066.png)
 
-1. Ensure the app has the necessary permissions to interact with the K8s API
-2. Set the `useRealCluster` flag to `true` in `server/k8s/client.ts`
-3. Optionally, adjust the service discovery interval and metrics collection frequency in `config.yaml`
-4. Deploy using the provided Dockerfile or Kubernetes manifests
+### Configuration Management
+![Configuration Management](attached_assets/image_1746281016656.png)
+
+### Dark Theme Support
+![Dark Theme](attached_assets/image_1746281180898.png)
 
 ## Development
 
-To run the application locally:
+### Project Structure
 
-1. Install dependencies: `npm install`
-2. Start the development server: `npm run dev`
-3. Access the application at: `http://localhost:3000`
+- `/client` - React frontend application
+- `/server` - Node.js backend services
+- `/shared` - Shared schemas and types
+- `/examples` - Example Spring Boot integration code
 
-For development, the application uses mock data by default. To connect to a real Kubernetes cluster, 
-modify the configuration as described in the deployment section.
+### Building the Spring Boot Client
+
+Navigate to the `/examples` directory and build the client:
+
+```bash
+cd examples
+mvn clean package
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

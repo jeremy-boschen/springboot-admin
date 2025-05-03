@@ -1,3 +1,8 @@
+import axios from 'axios';
+import { Service, ServiceStatus } from '../../shared/schema';
+import { storage } from '../storage';
+import config from '../config';
+
 /**
  * Spring Boot Actuator Health Check Module
  * 
@@ -12,11 +17,6 @@
  * follow the same status conventions: UP, DOWN, WARNING, and UNKNOWN.
  */
 
-import axios from 'axios';
-import { Service, ServiceStatus } from '@shared/schema';
-import { storage } from '../storage';
-import config from '../config';
-
 /**
  * Checks the health of a Spring Boot application through its Actuator health endpoint
  * 
@@ -25,29 +25,41 @@ import config from '../config';
  */
 export async function checkActuatorHealth(service: Service): Promise<ServiceStatus> {
   try {
-    // Construct the health endpoint URL
-    const healthPath = service.healthCheckPath || '/actuator/health';
-    const url = `${service.actuatorUrl}${healthPath}`;
+    // Construct the health check URL
+    const healthUrl = service.actuatorUrl + (service.healthCheckPath || '/health');
     
-    // Make the request with a timeout
-    const response = await axios.get(url, { 
-      timeout: 5000,
-      headers: {
-        'Accept': 'application/json'
-      }
+    // Set a timeout for the health check request
+    const requestTimeout = config.healthCheck?.timeoutMs || 5000;
+    
+    // Make the health check request
+    const response = await axios.get(healthUrl, { 
+      timeout: requestTimeout,
+      validateStatus: () => true // Accept any status code to handle different actuator configurations
     });
     
-    // Parse the health status
-    if (response.data && response.data.status) {
-      const status = response.data.status.toUpperCase();
-      if (status === 'UP' || status === 'DOWN' || status === 'WARNING') {
-        return status as ServiceStatus;
-      }
+    // If the request failed with a network error, the service is DOWN
+    if (response.status !== 200) {
+      return 'DOWN';
     }
     
-    return 'UNKNOWN';
+    // Parse the health data
+    const healthData = response.data;
+    
+    // Handle Spring Boot 2.x and 3.x health output format
+    const status = healthData.status?.toLowerCase() || 'unknown';
+    
+    // Map Spring Boot health status to our service status enum
+    if (status === 'up') {
+      return 'UP';
+    } else if (status === 'down') {
+      return 'DOWN';
+    } else if (status === 'warning' || status === 'unknown') {
+      return 'WARNING';
+    } else {
+      return 'UNKNOWN';
+    }
   } catch (error) {
-    console.error(`Health check failed for service ${service.name}:`, error);
+    console.error(`Health check failed for service ${service.id}:`, error);
     return 'DOWN';
   }
 }
@@ -59,31 +71,41 @@ export async function checkActuatorHealth(service: Service): Promise<ServiceStat
  * @returns Number of services checked
  */
 export async function performHealthChecks(maxAge: number = 60): Promise<number> {
-  // Get services that need to be checked
-  const services = await storage.getServicesForHealthCheck(maxAge);
-  
-  console.log(`Performing health checks on ${services.length} services`);
-  
-  for (const service of services) {
-    try {
-      // Check health
-      const status = await checkActuatorHealth(service);
-      
-      // Update service status
-      if (status !== service.status) {
-        await storage.updateServiceStatus(service.id, status);
-      }
-      
-      // Update last seen timestamp
-      await storage.updateServiceLastSeen(service.id);
-      
-      console.log(`Health check for ${service.name}: ${status}`);
-    } catch (error) {
-      console.error(`Error checking health for service ${service.name}:`, error);
+  try {
+    // Get all services that need a health check based on their last check time
+    const services = await storage.getServicesForHealthCheck(maxAge);
+    
+    if (services.length === 0) {
+      return 0;
     }
+    
+    console.log(`Performing health checks on ${services.length} services`);
+    
+    // Check the health of each service
+    let checkedCount = 0;
+    
+    for (const service of services) {
+      try {
+        // Check the status
+        const status = await checkActuatorHealth(service);
+        
+        // Update the service status and last seen timestamp
+        await storage.updateServiceStatus(service.id, status);
+        await storage.updateServiceLastSeen(service.id);
+        
+        console.log(`Processed service ${service.name} in ${service.namespace || 'default'} with status ${status}`);
+        checkedCount++;
+      } catch (error) {
+        console.error(`Failed to process health check for service ${service.id}:`, error);
+      }
+    }
+    
+    console.log(`Service discovery completed`);
+    return checkedCount;
+  } catch (error) {
+    console.error('Error performing health checks:', error);
+    return 0;
   }
-  
-  return services.length;
 }
 
 /**
@@ -93,15 +115,13 @@ export async function performHealthChecks(maxAge: number = 60): Promise<number> 
  * @returns The interval ID
  */
 export function scheduleHealthChecks(intervalMs: number = 30000): NodeJS.Timeout {
-  console.log(`Scheduling health checks every ${intervalMs/1000} seconds`);
+  console.log(`Scheduling health checks every ${intervalMs}ms`);
   
-  // Initial health check
-  performHealthChecks();
+  // Get the health check interval in seconds
+  const healthCheckInterval = config.healthCheck?.retryDelayMs || 5;
   
-  // Schedule regular health checks
-  const intervalId = setInterval(() => {
-    performHealthChecks();
+  // Set up the interval for health checks
+  return setInterval(async () => {
+    await performHealthChecks(healthCheckInterval);
   }, intervalMs);
-  
-  return intervalId;
 }
