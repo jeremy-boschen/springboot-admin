@@ -20,6 +20,9 @@ interface LogLevelManagerProps {
 }
 
 export function LogLevelManager({ serviceId }: LogLevelManagerProps) {
+  // Add debug logs to see what's happening
+  console.log("LogLevelManager rendered with serviceId:", serviceId, typeof serviceId);
+  
   const {
     loggersList,
     logLevels,
@@ -32,6 +35,12 @@ export function LogLevelManager({ serviceId }: LogLevelManagerProps) {
     refetchLoggers,
   } = useServiceLoggers(serviceId);
 
+  console.log("useServiceLoggers hook returned:", { 
+    loggersList, 
+    loggersCount: loggersList?.length,
+    loggersError
+  });
+  
   const [logLevelToSet, setLogLevelToSet] = React.useState('');
 
   // Handle when a logger is selected

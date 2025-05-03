@@ -237,6 +237,11 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
           </p>
         </CardHeader>
         <CardContent>
+          {/* Add debug info to see what's happening */}
+          <div className="mb-4 text-xs text-muted-foreground">
+            Debug: Service ID is {service.id} (type: {typeof service.id})
+          </div>
+          
           {service.id ? (
             <LogLevelManager serviceId={service.id} />
           ) : (
