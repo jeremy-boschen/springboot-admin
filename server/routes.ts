@@ -171,7 +171,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Restart a service
+  /**
+   * Restart a Kubernetes service (pod/deployment)
+   * 
+   * Triggers a restart of the specified service by leveraging the Kubernetes API.
+   * The implementation uses the Kubernetes client to identify and restart the
+   * corresponding deployment or pod. After initiating the restart, a fresh
+   * metrics collection is triggered to update the service status.
+   */
   app.post('/api/services/:id/restart', async (req: Request, res: Response) => {
     try {
       const serviceId = parseInt(req.params.id);
@@ -181,13 +188,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Service not found' });
       }
       
-      // For now, this is a mock restart since we need to map to the actual Kubernetes deployment
-      // In a real implementation, we would restart the deployment/pod
+      // Use the Kubernetes client to handle the restart operation
+      const restartResult = await k8sClient.restartService(
+        service.namespace,
+        service.podName
+      );
+      
+      if (!restartResult.success) {
+        return res.status(500).json({ 
+          error: 'Failed to restart service',
+          details: restartResult.message
+        });
+      }
       
       // Trigger a fresh metrics collection for the service
       await collectServiceMetrics(serviceId, service.actuatorUrl);
       
-      res.json({ message: 'Service restart initiated' });
+      res.json({ 
+        message: 'Service restart initiated',
+        details: restartResult.message
+      });
     } catch (error) {
       console.error('Error restarting service:', error);
       res.status(500).json({ error: 'Failed to restart service' });
