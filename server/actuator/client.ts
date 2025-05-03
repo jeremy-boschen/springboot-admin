@@ -116,7 +116,25 @@ const MOCK_LOGS = [
   '2025-05-03 10:51:10.234 TRACE [http-client] Received response: 200 OK, content length: 1256 bytes'
 ];
 
-// Client for interacting with Spring Boot Actuator endpoints
+/**
+ * Spring Boot Actuator Client
+ * 
+ * This class provides an interface to the Spring Boot Actuator API to gather health,
+ * metrics, logs, and configuration information from Spring Boot applications.
+ * 
+ * The client supports both real data fetching from live Spring Boot applications
+ * and mock data for development or testing environments. It fetches data from
+ * standard Actuator endpoints like /health, /info, /metrics, and /logfile.
+ * 
+ * Key capabilities:
+ * - Health status checks to determine if services are UP, DOWN, or in WARNING state
+ * - Version and build information retrieval
+ * - Metrics collection (memory usage, CPU usage, request counts, etc.)
+ * - Log file access and parsing
+ * 
+ * Endpoint paths and connection settings are configured via the application's
+ * config file, supporting customization of Actuator paths and timeouts.
+ */
 export class ActuatorClient {
   private baseUrl: string;
   private useMockData: boolean = true;
@@ -147,7 +165,15 @@ export class ActuatorClient {
     return `${this.baseUrl}${this.actuatorBasePath}${endpoint}`;
   }
   
-  // Get health check information
+  /**
+   * Get health status information from the Spring Boot application
+   * 
+   * Fetches data from the /health endpoint to determine if the service is
+   * running properly. The health endpoint typically returns an overall status
+   * (UP, DOWN, or WARNING) and component-specific health checks.
+   * 
+   * @returns Health status information including overall status and component details
+   */
   async getHealth() {
     if (this.useMockData) {
       console.log(`[MOCK] Getting health data for ${this.baseUrl}`);
@@ -169,7 +195,15 @@ export class ActuatorClient {
     }
   }
 
-  // Get application info (if available)
+  /**
+   * Get application build and version information
+   * 
+   * Retrieves metadata about the Spring Boot application including version numbers,
+   * build timestamps, git commit information, and other custom info exposed 
+   * through the /info endpoint.
+   * 
+   * @returns Object containing application metadata and version information
+   */
   async getInfo() {
     if (this.useMockData) {
       console.log(`[MOCK] Getting info data for ${this.baseUrl}`);
@@ -188,7 +222,20 @@ export class ActuatorClient {
     }
   }
 
-  // Get metrics (if available)
+  /**
+   * Retrieve performance metrics from the Spring Boot application
+   * 
+   * Collects various metrics from the /metrics endpoint including:
+   * - Memory usage (used/max)
+   * - CPU utilization
+   * - HTTP request statistics and error counts
+   * 
+   * The method first retrieves available metric names and then fetches
+   * specific metrics of interest. The data is aggregated into a structured
+   * format for easy consumption by the dashboard.
+   * 
+   * @returns Object containing various performance metrics
+   */
   async getMetrics() {
     if (this.useMockData) {
       console.log(`[MOCK] Getting metrics data for ${this.baseUrl}`);
@@ -240,7 +287,19 @@ export class ActuatorClient {
     }
   }
 
-  // Get log file (if available)
+  /**
+   * Retrieve application logs from the Spring Boot service
+   * 
+   * Fetches log entries from the /logfile endpoint or falls back to logger
+   * configuration if logs are not directly accessible. The method supports
+   * limiting the number of log entries to prevent overwhelming the client.
+   * 
+   * The logs are parsed to extract timestamp, log level, and message content
+   * for structured display in the UI.
+   * 
+   * @param limit Maximum number of log entries to retrieve (defaults to 100)
+   * @returns Array of log entries or logger configuration if logs unavailable
+   */
   async getLogs(limit = 100) {
     if (this.useMockData) {
       console.log(`[MOCK] Getting logs for ${this.baseUrl}`);
@@ -278,7 +337,16 @@ export class ActuatorClient {
     }
   }
 
-  // Get available loggers and their levels
+  /**
+   * Retrieve available loggers and their configured levels
+   * 
+   * Fetches the list of available loggers from the /loggers endpoint, including
+   * both the configured level (explicitly set) and effective level (inherited).
+   * This information is used to present users with logger configuration options
+   * and to show the current logging state.
+   * 
+   * @returns Object containing available log levels and configured loggers
+   */
   async getLoggers() {
     if (this.useMockData) {
       console.log(`[MOCK] Getting loggers for ${this.baseUrl}`);
