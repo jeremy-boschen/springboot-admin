@@ -22,10 +22,10 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-# Copy the built files from the correct directory
+# Copy the entire dist directory which includes:
+# - server bundle (dist/index.js)
+# - client assets (dist/public/*)
 COPY --from=builder /app/dist ./dist
-# Copy the client-side assets (static Vite output)
-COPY --from=builder /app/client/dist ./client/dist
 
 # Install only production dependencies
 RUN npm ci --only=production
