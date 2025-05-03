@@ -22,7 +22,10 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-COPY --from=builder /app/build ./build
+# Copy the built files from the correct directory
+COPY --from=builder /app/dist ./dist
+# Copy the client-side assets (static Vite output)
+COPY --from=builder /app/client/dist ./client/dist
 
 # Install only production dependencies
 RUN npm ci --only=production
@@ -42,5 +45,5 @@ USER appuser
 # Expose the port
 EXPOSE 3000
 
-# Start the application
-CMD ["node", "build/server/index.js"]
+# Start the application using the correct path to the server bundle
+CMD ["node", "dist/index.js"]
