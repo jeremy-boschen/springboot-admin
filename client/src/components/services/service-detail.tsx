@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MetricsChart } from "@/components/services/metrics-chart";
 import { LogTable } from "@/components/services/log-table";
 import { LogLevelManager } from "@/components/services/log-level-manager";
-import { ConfigManager } from "@/components/services/config-manager";
+import { ConfigManager } from "@/components/services/config-manager-new";
 import { getStatusColor, getResourceUtilizationClass } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { 
