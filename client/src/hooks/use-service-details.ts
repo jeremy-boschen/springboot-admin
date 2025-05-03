@@ -82,15 +82,42 @@ export function useServiceDetails(serviceId: string | null) {
   
   console.log('Processed service data:', service);
 
+  // Function to restart the service and refresh the data
+  const refreshService = async () => {
+    if (!serviceId) return;
+    
+    try {
+      // Call the restart endpoint
+      const response = await fetch(`/api/services/${serviceId}/restart`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to restart service');
+      }
+      
+      const result = await response.json();
+      
+      // Refresh all the data
+      serviceQuery.refetch();
+      logsQuery.refetch();
+      metricsQuery.refetch();
+      
+      return result;
+    } catch (error) {
+      console.error('Error restarting service:', error);
+      throw error;
+    }
+  };
+
   return {
     service,
     isLoading,
     isError,
     error,
-    refreshService: () => {
-      serviceQuery.refetch();
-      logsQuery.refetch();
-      metricsQuery.refetch();
-    }
+    refreshService
   };
 }

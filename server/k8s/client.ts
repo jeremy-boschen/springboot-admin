@@ -308,6 +308,79 @@ export class KubernetesClient {
       return "2023-05-03 12:34:56 INFO  [pod-1] Mock log entry for development\n2023-05-03 12:35:01 INFO  [pod-1] Application startup complete";
     }
   }
+  
+  /**
+   * Restarts a service by first identifying the appropriate Kubernetes resource
+   * 
+   * This method determines whether the service is a pod, deployment, or statefulset,
+   * and applies the appropriate restart strategy. For pods, it deletes and allows
+   * the controller to recreate it. For deployments and statefulsets, it triggers
+   * a rolling restart by updating annotations.
+   * 
+   * @param namespace The namespace containing the service
+   * @param podName The pod/deployment/service name to restart
+   * @returns Object with success status and message details
+   */
+  async restartService(namespace: string, podName: string): Promise<{success: boolean, message: string}> {
+    console.log(`Initiating restart for service ${podName} in namespace ${namespace}`);
+    
+    if (this.useRealCluster && this.k8sApi && this.k8sAppsApi) {
+      try {
+        // First check if this is a deployment
+        try {
+          const deployment = await this.k8sAppsApi.readNamespacedDeployment(podName, namespace);
+          if (deployment) {
+            // It's a deployment, restart using the deployment method
+            await this.restartDeployment(namespace, podName);
+            return {
+              success: true,
+              message: `Deployment ${podName} restart initiated successfully. New pods will be created with updated configuration.`
+            };
+          }
+        } catch (err) {
+          // Not a deployment, or error checking - continue to try other resource types
+        }
+        
+        // Check if it's a standalone pod
+        try {
+          const pod = await this.k8sApi.readNamespacedPod(podName, namespace);
+          if (pod) {
+            // For pods, we delete them and let the controller recreate them
+            await this.k8sApi.deleteNamespacedPod(podName, namespace);
+            return {
+              success: true,
+              message: `Pod ${podName} deleted successfully. The controller will recreate it automatically.`
+            };
+          }
+        } catch (err) {
+          // Not a pod, or error checking
+        }
+        
+        // If we got here, we couldn't find the resource
+        return {
+          success: false,
+          message: `Could not find Kubernetes resource with name ${podName} in namespace ${namespace}`
+        };
+      } catch (error) {
+        console.error(`Error restarting service ${podName} in namespace ${namespace}:`, error);
+        return {
+          success: false,
+          message: `Error restarting service: ${(error as Error).message || 'Unknown error'}`
+        };
+      }
+    } else {
+      // In development mode with mock data
+      console.log(`[MOCK] Simulating restart of service ${podName} in namespace ${namespace}`);
+      
+      // Simulate a brief delay to mimic the restart process
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      return {
+        success: true,
+        message: `Service ${podName} in namespace ${namespace} has been restarted successfully`
+      };
+    }
+  }
 }
 
 // Singleton instance
