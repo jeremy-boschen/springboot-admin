@@ -5,6 +5,7 @@ import { scheduleServiceDiscovery } from "./k8s/service-discovery";
 import { scheduleMetricsCollection, collectServiceMetrics } from "./actuator/metrics";
 import { k8sClient } from "./k8s/client";
 import { createActuatorClient } from "./actuator/client";
+import { insertConfigPropertySchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
@@ -255,6 +256,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // 4. Configuration management endpoints
+  
+  // Get all configuration properties for a service
+  app.get('/api/services/:id/config', async (req: Request, res: Response) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      const service = await storage.getService(serviceId);
+      
+      if (!service) {
+        return res.status(404).json({ error: 'Service not found' });
+      }
+      
+      const properties = await storage.getConfigPropertiesForService(serviceId);
+      res.json(properties);
+    } catch (error) {
+      console.error('Error fetching configuration properties:', error);
+      res.status(500).json({ error: 'Failed to fetch configuration properties' });
+    }
+  });
+  
+  // Get a specific configuration property
+  app.get('/api/services/:id/config/:propertyId', async (req: Request, res: Response) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      const propertyId = parseInt(req.params.propertyId);
+      
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: 'Service not found' });
+      }
+      
+      const property = await storage.getConfigProperty(propertyId);
+      if (!property || property.serviceId !== serviceId) {
+        return res.status(404).json({ error: 'Configuration property not found' });
+      }
+      
+      res.json(property);
+    } catch (error) {
+      console.error('Error fetching configuration property:', error);
+      res.status(500).json({ error: 'Failed to fetch configuration property' });
+    }
+  });
+  
+  // Create a new configuration property
+  app.post('/api/services/:id/config', async (req: Request, res: Response) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: 'Service not found' });
+      }
+      
+      // Validate the property data
+      const propertyData = { ...req.body, serviceId };
+      const result = insertConfigPropertySchema.safeParse(propertyData);
+      
+      if (!result.success) {
+        return res.status(400).json({ 
+          error: 'Invalid configuration property data', 
+          details: result.error.format() 
+        });
+      }
+      
+      const property = await storage.createConfigProperty(result.data);
+      res.status(201).json(property);
+    } catch (error) {
+      console.error('Error creating configuration property:', error);
+      res.status(500).json({ error: 'Failed to create configuration property' });
+    }
+  });
+  
+  // Update a configuration property
+  app.put('/api/services/:id/config/:propertyId', async (req: Request, res: Response) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      const propertyId = parseInt(req.params.propertyId);
+      
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: 'Service not found' });
+      }
+      
+      const existingProperty = await storage.getConfigProperty(propertyId);
+      if (!existingProperty || existingProperty.serviceId !== serviceId) {
+        return res.status(404).json({ error: 'Configuration property not found' });
+      }
+      
+      // Validate the update data (excluding serviceId to prevent reassignment)
+      const updateData = { ...req.body };
+      delete updateData.serviceId;
+      
+      const property = await storage.updateConfigProperty(propertyId, updateData);
+      res.json(property);
+    } catch (error) {
+      console.error('Error updating configuration property:', error);
+      res.status(500).json({ error: 'Failed to update configuration property' });
+    }
+  });
+  
+  // Delete a configuration property
+  app.delete('/api/services/:id/config/:propertyId', async (req: Request, res: Response) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      const propertyId = parseInt(req.params.propertyId);
+      
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: 'Service not found' });
+      }
+      
+      const existingProperty = await storage.getConfigProperty(propertyId);
+      if (!existingProperty || existingProperty.serviceId !== serviceId) {
+        return res.status(404).json({ error: 'Configuration property not found' });
+      }
+      
+      await storage.deleteConfigProperty(propertyId);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting configuration property:', error);
+      res.status(500).json({ error: 'Failed to delete configuration property' });
+    }
+  });
+
   // Start the service discovery and metrics collection processes
   scheduleServiceDiscovery(60000); // Check for new services every minute
   scheduleMetricsCollection(30000); // Collect metrics every 30 seconds

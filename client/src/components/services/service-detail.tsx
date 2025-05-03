@@ -7,11 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MetricsChart } from "@/components/services/metrics-chart";
 import { LogTable } from "@/components/services/log-table";
 import { LogLevelManager } from "@/components/services/log-level-manager";
+import { ConfigManager } from "@/components/services/config-manager";
 import { getStatusColor, getResourceUtilizationClass } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { 
   ArrowLeft, RefreshCw, Power, ChevronDown, ChevronUp, 
-  Search, X, Filter 
+  Search, X, Filter, Settings 
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,7 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
   const [infoOpen, setInfoOpen] = useState(true);
   const [metricsOpen, setMetricsOpen] = useState(true);
   const [logLevelOpen, setLogLevelOpen] = useState(true);
+  const [configOpen, setConfigOpen] = useState(true);
   const [logsOpen, setLogsOpen] = useState(true);
   
   const memoryPercentage = service.memory 
