@@ -55,18 +55,11 @@ export function useServiceLoggers(serviceId: number | string | null) {
     mutationFn: async (params: SetLogLevelParams) => {
       if (!serviceId) throw new Error('Service ID is required');
       
-      // Create API request options
-      const url = `/api/services/${serviceId}/loggers/${encodeURIComponent(params.logger)}`;
-      const options = {
+      // Use the apiRequest function with the new signature
+      return apiRequest({
+        url: `/api/services/${serviceId}/loggers/${encodeURIComponent(params.logger)}`,
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ level: params.level })
-      };
-      
-      // Make the API request
-      return await fetch(url, options).then(async (res) => {
-        if (!res.ok) throw new Error('Failed to set log level');
-        return await res.json();
+        body: { level: params.level }
       });
     },
     onSuccess: () => {

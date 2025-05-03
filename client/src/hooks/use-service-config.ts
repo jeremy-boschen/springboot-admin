@@ -9,8 +9,8 @@ import { toast } from "@/hooks/use-toast";
 export function useServiceConfig(serviceId: number | string | null) {
   const queryClient = useQueryClient();
   
-  const serviceIdStr = serviceId ? String(serviceId) : null;
-  const configQueryKey = serviceIdStr ? [`/api/services/${serviceIdStr}/config`] : null;
+  const serviceIdStr = serviceId ? String(serviceId) : '';
+  const configQueryKey = serviceId ? [`/api/services/${serviceIdStr}/config`] : undefined;
   
   // Fetch all configuration properties for a service
   const {
