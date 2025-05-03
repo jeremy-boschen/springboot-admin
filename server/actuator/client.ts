@@ -190,16 +190,20 @@ export class ActuatorClient {
         validateStatus: () => true // Accept any status to handle DOWN states
       });
 
-      // Handle error responses that contain data
-      if (response.status >= 400) {
-        return {
-          status: 'DOWN',
-          error: response.data.error || response.data.message || `HTTP ${response.status}`,
-          details: response.data
-        };
+      // Only consider 2xx status codes as successful
+      if (response.status >= 200 && response.status < 300) {
+        return response.data;
       }
 
-      return response.data;
+      // All other status codes (including redirects) are treated as DOWN
+      return {
+        status: 'DOWN',
+        error: response.data?.error || response.data?.message || `Unexpected HTTP status: ${response.status}`,
+        details: {
+          statusCode: response.status,
+          response: response.data
+        }
+      };
     } catch (error) {
       console.error('Error fetching health data:', error);
       return { status: 'DOWN', error: 'Connection failed' };
