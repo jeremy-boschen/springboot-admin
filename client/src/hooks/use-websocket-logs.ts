@@ -1,11 +1,31 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Log } from '@shared/schema';
 
+/**
+ * WebSocketLogsOptions - Configuration options for the WebSocket logs hook
+ * @property {number|string|null} serviceId - The ID of the service to stream logs from
+ * @property {boolean} enabled - Whether the WebSocket connection should be enabled
+ */
 interface WebSocketLogsOptions {
   serviceId: number | string | null;
   enabled?: boolean;
 }
 
+/**
+ * Custom hook for real-time log streaming via WebSockets
+ * 
+ * This hook establishes and manages a WebSocket connection to the server for 
+ * receiving real-time log updates from a specific service. It handles:
+ * 
+ * - Establishing WebSocket connections with proper protocol detection
+ * - Maintaining connection state and reconnection logic
+ * - Aggregating incoming log messages into a unified state
+ * - Providing connection status for UI feedback
+ * - Cleaning up connections when no longer needed
+ * 
+ * @param options Configuration options for the WebSocket connection
+ * @returns Object containing logs array, connection status, error state, and utility functions
+ */
 export function useWebSocketLogs({ serviceId, enabled = true }: WebSocketLogsOptions) {
   const [isConnected, setIsConnected] = useState(false);
   const [logs, setLogs] = useState<Log[]>([]);

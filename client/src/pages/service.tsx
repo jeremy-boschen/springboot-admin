@@ -10,13 +10,23 @@ import { ArrowLeft } from "lucide-react";
 /**
  * Service Detail Page Component
  * 
- * Renders a detailed view of a specific service identified by its ID.
- * Supports deep linking to specific sections through URL parameters.
+ * This component renders a detailed view of a specific Spring Boot service identified by its ID.
+ * It serves as the main page for viewing all aspects of a service's health, metrics, logs, and configuration.
  * 
- * URL formats:
- * - /service/:id - Shows all sections
+ * Features:
+ * - Fetches comprehensive service details, metrics, and logs from the API
+ * - Displays service information in collapsible sections for better organization
+ * - Supports dynamic opening/closing of specific content sections 
+ * - Provides navigation back to the dashboard
+ * 
+ * Deep Linking Support:
+ * The component supports URL-based deep linking to specific sections for easy sharing:
+ * - /service/:id - Shows all sections (default collapsed state)
  * - /service/:id/:section - Shows and highlights the specified section
  *   (section can be: info, metrics, logs, loglevels, config)
+ * 
+ * When a deep link is accessed, the relevant section is automatically expanded and
+ * scrolled into view for better user experience.
  */
 export default function ServicePage() {
   const [, setLocation] = useLocation();

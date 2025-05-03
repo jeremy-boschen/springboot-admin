@@ -18,6 +18,15 @@ export interface ServiceCardProps {
   onClick: () => void;
 }
 
+/**
+ * ServiceDetailProps - Properties for the ServiceDetail component
+ * 
+ * @property {ServiceDetail} service - The service object containing all details to display
+ * @property {Function} onBack - Callback function to navigate back to the service list
+ * @property {Function} refreshService - Function to trigger a refresh of the service data
+ * @property {Object} initialSections - Optional configuration for which sections should be initially expanded
+ *   This is primarily used for deep linking to specific sections of the service detail view
+ */
 export interface ServiceDetailProps {
   service: ServiceDetail;
   onBack: () => void;

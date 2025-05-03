@@ -8,6 +8,17 @@ import { LogTable } from '@/components/services/log-table';
 import { getLogLevelColor, cn, formatDate } from '@/lib/utils';
 import { Log } from '@shared/schema';
 
+/**
+ * Props for the FullscreenLogs component
+ * 
+ * @property {Log[]} logs - Array of log entries to display
+ * @property {string} serviceName - Name of the service being monitored
+ * @property {Function} onClose - Callback to close the fullscreen log view
+ * @property {boolean} isRealtime - Whether real-time log streaming is active
+ * @property {Function} onToggleRealtime - Callback to toggle real-time log streaming
+ * @property {Function} onClearLogs - Callback to clear the current log display
+ * @property {'connected' | 'disconnected' | 'error'} realtimeStatus - Status of real-time connection
+ */
 interface FullscreenLogsProps {
   logs: Log[];
   serviceName: string;
