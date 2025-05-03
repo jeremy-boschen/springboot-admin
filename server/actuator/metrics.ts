@@ -3,12 +3,38 @@ import { storage } from '../storage';
 import { InsertMetric, InsertLog, ServiceStatus } from '@shared/schema';
 import config from '../config';
 
-// Generate random variations for mock metrics
+/**
+ * Helper function to generate random variations for mock metrics
+ * 
+ * Creates realistic fluctuations in metric values to simulate actual service behavior
+ * during development testing. The function returns the base value with a random
+ * deviation within the specified variance range.
+ * 
+ * @param base The base value to which variation will be applied
+ * @param variance The maximum amount the value can deviate in either direction
+ * @returns The base value with applied random variation
+ */
 function getRandomVariation(base: number, variance: number): number {
   return base + (Math.random() * variance * 2) - variance;
 }
 
-// Collect metrics from a service
+/**
+ * Collect and store performance metrics from a Spring Boot service
+ * 
+ * Fetches health, metrics, and other performance data from the specified
+ * Spring Boot service via its Actuator endpoints. The collected data includes:
+ * - Health status (UP, DOWN, WARNING, UNKNOWN)
+ * - Memory usage (used and maximum)
+ * - CPU utilization
+ * - Error counts from HTTP request statistics
+ * 
+ * The collected metrics are processed and stored in the database for historical
+ * tracking and visualization on the dashboard. This function also triggers
+ * log collection for the service.
+ * 
+ * @param serviceId The ID of the service in the database
+ * @param actuatorUrl The base URL for the service's Actuator endpoints
+ */
 export async function collectServiceMetrics(serviceId: number, actuatorUrl: string) {
   try {
     console.log(`Collecting metrics for service ${serviceId} at ${actuatorUrl}`);
@@ -101,7 +127,20 @@ export async function collectServiceMetrics(serviceId: number, actuatorUrl: stri
   }
 }
 
-// Collect logs from a service
+/**
+ * Collect and store log entries from a Spring Boot service
+ * 
+ * Fetches log entries from the service's logfile endpoint and processes them
+ * into structured log records that can be displayed and analyzed in the UI.
+ * The function parses log lines to extract timestamps, log levels, and message
+ * content, applying consistent formatting and categorization.
+ * 
+ * The logs are stored in the database and associated with the specific service,
+ * allowing for historical log viewing and analysis.
+ * 
+ * @param serviceId The ID of the service in the database
+ * @param actuatorUrl The base URL for the service's Actuator endpoints
+ */
 export async function collectServiceLogs(serviceId: number, actuatorUrl: string) {
   try {
     console.log(`Collecting logs for service ${serviceId}`);
@@ -186,7 +225,20 @@ export async function collectServiceLogs(serviceId: number, actuatorUrl: string)
   }
 }
 
-// Schedule metrics collection for all services
+/**
+ * Schedule periodic metrics collection for all monitored services
+ * 
+ * Sets up a recurring timer to automatically collect metrics and logs from
+ * all registered Spring Boot services. This ensures the dashboard always
+ * displays recent performance data without requiring manual refresh.
+ * 
+ * The collection is staggered to avoid overwhelming the system when many
+ * services are being monitored. The interval can be configured through
+ * the application configuration or passed directly as a parameter.
+ * 
+ * @param intervalMs Optional interval in milliseconds between collection cycles
+ * @returns Timer ID that can be used to cancel the scheduled collection
+ */
 export function scheduleMetricsCollection(intervalMs?: number) {
   // Use config interval if not explicitly provided
   const metricsInterval = intervalMs || config.metrics.collectionInterval;

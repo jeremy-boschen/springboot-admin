@@ -385,7 +385,20 @@ export class ActuatorClient {
     }
   }
   
-  // Set the log level for a specific logger
+  /**
+   * Change the log level for a specific logger at runtime
+   * 
+   * Updates the configuration of a specific logger through the /loggers endpoint,
+   * allowing dynamic log level adjustment for debugging or troubleshooting without
+   * requiring application restarts.
+   * 
+   * This enables users to increase logging verbosity temporarily when diagnosing
+   * issues and reduce it when normal operation resumes.
+   * 
+   * @param loggerName The fully qualified name of the logger to configure
+   * @param level The log level to set (e.g., "DEBUG", "INFO", "ERROR")
+   * @returns True if successful, false if the operation failed
+   */
   async setLogLevel(loggerName: string, level: string) {
     if (this.useMockData) {
       console.log(`[MOCK] Setting log level for ${loggerName} to ${level} on ${this.baseUrl}`);
@@ -409,7 +422,16 @@ export class ActuatorClient {
   }
 }
 
-// Create a new actuator client
+/**
+ * Factory function to create a new ActuatorClient instance
+ * 
+ * This function provides a convenient way to create properly configured
+ * ActuatorClient instances with the appropriate URL for the Spring Boot
+ * Actuator endpoints.
+ * 
+ * @param actuatorUrl The base URL for the Spring Boot Actuator endpoints
+ * @returns A configured ActuatorClient instance
+ */
 export function createActuatorClient(actuatorUrl: string) {
   return new ActuatorClient(actuatorUrl);
 }
