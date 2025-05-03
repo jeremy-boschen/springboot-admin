@@ -2,6 +2,7 @@ import { k8sClient } from './client';
 import { InsertService, ServiceStatus } from '@shared/schema';
 import { storage } from '../storage';
 import { createActuatorClient } from '../actuator/client';
+import config from '../config';
 
 // Labels and annotations to identify Spring Boot services
 const SPRING_BOOT_LABELS = [
@@ -146,8 +147,16 @@ async function processDiscoveredPod(pod: any) {
   // Construct the cluster DNS for the pod
   const clusterDns = `${podName}.${namespace}.svc.cluster.local`;
   
+  // Check for management port annotation (or use default)
+  const managementPort = pod.metadata?.annotations?.[config.actuator.managementPortAnnotation] || 
+                         config.actuator.defaultPort;
+  
+  // Check for management context path annotation (or use default)
+  const managementContextPath = pod.metadata?.annotations?.[config.actuator.managementContextPathAnnotation] || 
+                                config.actuator.basePath;
+  
   // Construct the actuator base URL
-  const actuatorUrl = `http://${clusterDns}:8080/actuator`;
+  const actuatorUrl = `http://${clusterDns}:${managementPort}${managementContextPath}`;
   const actuatorClient = createActuatorClient(actuatorUrl);
   
   try {
@@ -216,14 +225,19 @@ async function processDiscoveredPod(pod: any) {
 }
 
 // Run service discovery on a schedule
-export function scheduleServiceDiscovery(intervalMs = 60000) {
+export function scheduleServiceDiscovery(intervalMs?: number) {
+  // Use config interval if not explicitly provided
+  const discoveryInterval = intervalMs || config.kubernetes.serviceDiscoveryInterval;
+  
+  console.log(`Scheduling service discovery every ${discoveryInterval/1000} seconds`);
+  
   // Initial discovery
   discoverSpringBootServices();
   
   // Schedule regular discovery
   const intervalId = setInterval(() => {
     discoverSpringBootServices();
-  }, intervalMs);
+  }, discoveryInterval);
   
   return intervalId;
 }

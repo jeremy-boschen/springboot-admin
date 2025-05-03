@@ -1,6 +1,7 @@
 import { createActuatorClient } from './client';
 import { storage } from '../storage';
 import { InsertMetric, InsertLog, ServiceStatus } from '@shared/schema';
+import config from '../config';
 
 // Generate random variations for mock metrics
 function getRandomVariation(base: number, variance: number): number {
@@ -163,7 +164,12 @@ export async function collectServiceLogs(serviceId: number, actuatorUrl: string)
 }
 
 // Schedule metrics collection for all services
-export function scheduleMetricsCollection(intervalMs = 30000) {
+export function scheduleMetricsCollection(intervalMs?: number) {
+  // Use config interval if not explicitly provided
+  const metricsInterval = intervalMs || config.metrics.collectionInterval;
+  
+  console.log(`Scheduling metrics collection every ${metricsInterval/1000} seconds`);
+  
   const intervalId = setInterval(async () => {
     try {
       // Get all services
@@ -180,7 +186,7 @@ export function scheduleMetricsCollection(intervalMs = 30000) {
     } catch (error) {
       console.error('Error during scheduled metrics collection:', error);
     }
-  }, intervalMs);
+  }, metricsInterval);
   
   return intervalId;
 }
