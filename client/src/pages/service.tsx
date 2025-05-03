@@ -7,9 +7,21 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
+/**
+ * Service Detail Page Component
+ * 
+ * Renders a detailed view of a specific service identified by its ID.
+ * Supports deep linking to specific sections through URL parameters.
+ * 
+ * URL formats:
+ * - /service/:id - Shows all sections
+ * - /service/:id/:section - Shows and highlights the specified section
+ *   (section can be: info, metrics, logs, loglevels, config)
+ */
 export default function ServicePage() {
   const [, setLocation] = useLocation();
-  const { id } = useParams<{ id: string }>();
+  // Get the service ID and optional section from URL parameters
+  const { id, section } = useParams<{ id: string, section?: string }>();
   const { toast } = useToast();
   
   const { 

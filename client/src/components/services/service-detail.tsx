@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { ServiceDetailProps } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { FullscreenLogs } from "@/components/services/fullscreen-logs";
 import { useWebSocketLogs } from "@/hooks/use-websocket-logs";
 import { getStatusColor, getResourceUtilizationClass } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { useLocation } from "wouter";
 import { 
   ArrowLeft, RefreshCw, Power, ChevronDown, ChevronUp, 
   Search, X, Filter, Settings, Maximize2, Wifi, WifiOff
@@ -19,19 +20,79 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 
+/**
+ * Service Detail Component
+ * 
+ * Displays comprehensive information about a single service including:
+ * - Basic service information (status, version, namespace)
+ * - Resource metrics (CPU, memory usage)
+ * - Log level management
+ * - Configuration properties 
+ * - Real-time and historical logs
+ * 
+ * Supports deep linking to specific sections via URL parameters
+ * and real-time log streaming via WebSockets.
+ */
 export function ServiceDetail({ service, onBack, refreshService }: ServiceDetailProps) {
+  const [location, setLocation] = useState("");
   const [logLevel, setLogLevel] = useState("ALL");
   const [logSearch, setLogSearch] = useState("");
   const [showFullscreenLogs, setShowFullscreenLogs] = useState(false);
   const [realtimeLogs, setRealtimeLogs] = useState(false);
   const statusColor = getStatusColor(service.status);
   
-  // State for collapsible sections
+  // State for collapsible sections with deep linking support
   const [infoOpen, setInfoOpen] = useState(true);
   const [metricsOpen, setMetricsOpen] = useState(true);
   const [logLevelOpen, setLogLevelOpen] = useState(true);
   const [configOpen, setConfigOpen] = useState(true);
   const [logsOpen, setLogsOpen] = useState(true);
+  
+  // Get the current section from URL if any
+  useEffect(() => {
+    // Parse the pathname to extract section if present
+    const pathParts = window.location.pathname.split('/');
+    const section = pathParts.length >= 4 ? pathParts[3] : null;
+    
+    // Update location for sharing links
+    setLocation(window.location.href);
+    
+    // Set appropriate section open based on URL
+    if (section) {
+      // Close all sections first
+      setInfoOpen(false);
+      setMetricsOpen(false);
+      setLogLevelOpen(false);
+      setConfigOpen(false);
+      setLogsOpen(false);
+      
+      // Open only the requested section
+      switch(section) {
+        case 'info':
+          setInfoOpen(true);
+          break;
+        case 'metrics':
+          setMetricsOpen(true);
+          break;
+        case 'logs':
+          setLogsOpen(true);
+          break;
+        case 'loglevels':
+          setLogLevelOpen(true);
+          break;
+        case 'config':
+          setConfigOpen(true);
+          break;
+        default:
+          // If invalid section, open all by default
+          setInfoOpen(true);
+          setMetricsOpen(true);
+          setLogLevelOpen(true);
+          setConfigOpen(true);
+          setLogsOpen(true);
+      }
+    }
+  }, []);
   
   // Set up WebSocket for real-time logs
   const {
@@ -103,12 +164,24 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
       </div>
 
       {/* Service Information - Collapsible */}
-      <Collapsible open={infoOpen} onOpenChange={setInfoOpen} className="w-full">
+      <Collapsible open={infoOpen} onOpenChange={setInfoOpen} className="w-full" id="info">
         <Card>
           <CardHeader className="px-6 py-5 flex flex-row items-center justify-between">
             <div>
               <div className="flex items-center">
-                <CardTitle className="text-lg leading-6 font-medium">Service Information</CardTitle>
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto font-medium text-lg text-gray-900 dark:text-white hover:no-underline hover:opacity-80"
+                  onClick={() => {
+                    // Update URL for deep linking without page reload
+                    const newUrl = `/service/${service.id}/info`;
+                    window.history.pushState({}, "", newUrl);
+                    setLocation(window.location.href);
+                  }}
+                >
+                  <CardTitle className="text-lg leading-6 font-medium">Service Information</CardTitle>
+                </Button>
+                
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" size="sm" className="ml-2 h-8 w-8 p-0">
                     {infoOpen ? (
@@ -168,11 +241,22 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
       </Collapsible>
 
       {/* Metrics Section - Collapsible */}
-      <Collapsible open={metricsOpen} onOpenChange={setMetricsOpen} className="w-full">
+      <Collapsible open={metricsOpen} onOpenChange={setMetricsOpen} className="w-full" id="metrics">
         <Card>
           <CardHeader className="px-6 py-5">
             <div className="flex items-center">
-              <CardTitle className="text-lg leading-6 font-medium">Resources & Metrics</CardTitle>
+              <Button 
+                variant="link" 
+                className="p-0 h-auto font-medium text-lg text-gray-900 dark:text-white hover:no-underline hover:opacity-80"
+                onClick={() => {
+                  // Update URL for deep linking without page reload
+                  const newUrl = `/service/${service.id}/metrics`;
+                  window.history.pushState({}, "", newUrl);
+                  setLocation(window.location.href);
+                }}
+              >
+                <CardTitle className="text-lg leading-6 font-medium">Resources & Metrics</CardTitle>
+              </Button>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" size="sm" className="ml-2 h-8 w-8 p-0">
                   {metricsOpen ? (
@@ -308,11 +392,22 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
       </Collapsible>
 
       {/* Configuration Management Section - Collapsible */}
-      <Collapsible open={configOpen} onOpenChange={setConfigOpen} className="w-full">
+      <Collapsible open={configOpen} onOpenChange={setConfigOpen} className="w-full" id="config">
         <Card>
           <CardHeader>
             <div className="flex items-center">
-              <CardTitle className="text-lg">Configuration Management</CardTitle>
+              <Button 
+                variant="link" 
+                className="p-0 h-auto font-medium text-lg text-gray-900 dark:text-white hover:no-underline hover:opacity-80"
+                onClick={() => {
+                  // Update URL for deep linking without page reload
+                  const newUrl = `/service/${service.id}/config`;
+                  window.history.pushState({}, "", newUrl);
+                  setLocation(window.location.href);
+                }}
+              >
+                <CardTitle className="text-lg">Configuration Management</CardTitle>
+              </Button>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" size="sm" className="ml-2 h-8 w-8 p-0">
                   {configOpen ? (
@@ -346,11 +441,22 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
       </Collapsible>
       
       {/* Log Level Management Section - Collapsible */}
-      <Collapsible open={logLevelOpen} onOpenChange={setLogLevelOpen} className="w-full">
+      <Collapsible open={logLevelOpen} onOpenChange={setLogLevelOpen} className="w-full" id="loglevels">
         <Card>
           <CardHeader>
             <div className="flex items-center">
-              <CardTitle className="text-lg">Log Level Management</CardTitle>
+              <Button 
+                variant="link" 
+                className="p-0 h-auto font-medium text-lg text-gray-900 dark:text-white hover:no-underline hover:opacity-80"
+                onClick={() => {
+                  // Update URL for deep linking without page reload
+                  const newUrl = `/service/${service.id}/loglevels`;
+                  window.history.pushState({}, "", newUrl);
+                  setLocation(window.location.href);
+                }}
+              >
+                <CardTitle className="text-lg">Log Level Management</CardTitle>
+              </Button>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" size="sm" className="ml-2 h-8 w-8 p-0">
                   {logLevelOpen ? (
@@ -384,13 +490,24 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
       </Collapsible>
 
       {/* Logs Section - Collapsible */}
-      <Collapsible open={logsOpen} onOpenChange={setLogsOpen} className="w-full">
+      <Collapsible open={logsOpen} onOpenChange={setLogsOpen} className="w-full" id="logs">
         <Card>
           <CardHeader className="px-6 py-5">
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center">
-                  <CardTitle className="text-lg leading-6 font-medium">Recent Logs</CardTitle>
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto font-medium text-lg text-gray-900 dark:text-white hover:no-underline hover:opacity-80"
+                    onClick={() => {
+                      // Update URL for deep linking without page reload
+                      const newUrl = `/service/${service.id}/logs`;
+                      window.history.pushState({}, "", newUrl);
+                      setLocation(window.location.href);
+                    }}
+                  >
+                    <CardTitle className="text-lg leading-6 font-medium">Recent Logs</CardTitle>
+                  </Button>
                   {realtimeLogs && isConnected && (
                     <Badge variant="default" className="ml-2 animate-pulse">
                       Live
