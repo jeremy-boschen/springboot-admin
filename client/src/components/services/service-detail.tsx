@@ -229,7 +229,21 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
       </Card>
 
       {/* Log Level Management Section */}
-      {service.id && <LogLevelManager serviceId={service.id} />}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Log Level Management</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Configure logging levels for this service
+          </p>
+        </CardHeader>
+        <CardContent>
+          {service.id ? (
+            <LogLevelManager serviceId={service.id} />
+          ) : (
+            <p className="text-sm text-muted-foreground">Service ID not available</p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Logs Section */}
       <Card>
