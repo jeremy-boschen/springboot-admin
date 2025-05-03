@@ -189,6 +189,16 @@ export class ActuatorClient {
         timeout: 3000,
         validateStatus: () => true // Accept any status to handle DOWN states
       });
+
+      // Handle error responses that contain data
+      if (response.status >= 400) {
+        return {
+          status: 'DOWN',
+          error: response.data.error || response.data.message || `HTTP ${response.status}`,
+          details: response.data
+        };
+      }
+
       return response.data;
     } catch (error) {
       console.error('Error fetching health data:', error);
