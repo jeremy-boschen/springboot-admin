@@ -71,7 +71,7 @@ const MOCK_SERVICES = [
 
 export async function discoverSpringBootServices() {
   // In development/demo mode, use mock data instead of real Kubernetes discovery
-  const useMockData = true;
+  const useMockData = !config.kubernetes.inCluster;
   
   try {
     console.log('Discovering Spring Boot services...');
