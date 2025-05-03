@@ -2,9 +2,7 @@ import { LogTableProps } from "@/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { getLogLevelColor } from "@/lib/utils";
-import { formatDate } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { getLogLevelColor, formatDate, cn } from "@/lib/utils";
 
 export function LogTable({ logs, loading = false }: LogTableProps) {
   if (loading) {
@@ -30,16 +28,18 @@ export function LogTable({ logs, loading = false }: LogTableProps) {
       </TableHeader>
       <TableBody>
         {logs.map((log) => {
-          const levelColor = getLogLevelColor(log.level);
+          // Ensure we have a valid level
+          const level = log.level || 'INFO';
+          const levelColor = getLogLevelColor(level);
 
           return (
             <TableRow key={log.id}>
               <TableCell>
                 <Badge 
                   variant="outline" 
-                  className={cn("px-2 font-semibold", levelColor.bg)}
+                  className={cn("px-2 font-semibold", levelColor)}
                 >
-                  {log.level}
+                  {level}
                 </Badge>
               </TableCell>
               <TableCell className="text-sm text-gray-500 dark:text-gray-400">

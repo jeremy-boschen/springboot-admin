@@ -69,27 +69,24 @@ export function getStatusColor(status: ServiceStatus) {
 }
 
 export function getLogLevelColor(level: string) {
-  switch (level) {
-    case 'INFO':
-      return {
-        bg: 'bg-green-100 text-green-800 dark:bg-green-900 dark:bg-opacity-30 dark:text-green-400'
-      };
-    case 'WARNING':
-      return {
-        bg: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:bg-opacity-30 dark:text-yellow-400'
-      };
+  const upperLevel = level.toUpperCase();
+  
+  switch (upperLevel) {
     case 'ERROR':
-      return {
-        bg: 'bg-red-100 text-red-800 dark:bg-red-900 dark:bg-opacity-30 dark:text-red-400'
-      };
+      return 'text-destructive bg-destructive/10 border-destructive/20 dark:bg-destructive/20';
+    case 'WARNING':
+    case 'WARN':
+      return 'text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800';
+    case 'INFO':
+      return 'text-primary bg-primary/10 border-primary/20 dark:bg-primary/20';
     case 'DEBUG':
-      return {
-        bg: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
-      };
+      return 'text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800';
+    case 'TRACE':
+      return 'text-purple-600 bg-purple-50 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800';
+    case 'OFF':
+      return 'text-gray-600 bg-gray-100 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700';
     default:
-      return {
-        bg: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
-      };
+      return 'text-muted-foreground bg-muted/50 border-muted';
   }
 }
 
