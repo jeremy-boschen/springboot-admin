@@ -162,7 +162,8 @@ export class ActuatorClient {
    * @returns Full URL to the actuator endpoint
    */
   private getEndpointUrl(endpoint: string): string {
-    return `${this.baseUrl}${this.actuatorBasePath}${endpoint}`;
+    // baseUrl already contains actuatorBasePath, so we just append the endpoint
+    return `${this.baseUrl}${endpoint}`;
   }
   
   /**
