@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: k8s-springboot-dashboard-ingress
+  labels:
+    app: k8s-springboot-dashboard
+  annotations:
+    kubernetes.io/ingress.class: "nginx"  # Use appropriate ingress class for your cluster
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    # Add any other annotations specific to your ingress controller
+spec:
+  rules:
+  - host: dashboard.example.com  # Replace with your domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: k8s-springboot-dashboard
+            port:
+              number: 80
+  # Optional: Add TLS configuration
+  # tls:
+  # - hosts:
+  #   - dashboard.example.com
+  #   secretName: dashboard-tls-secret

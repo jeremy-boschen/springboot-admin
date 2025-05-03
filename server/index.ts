@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import config from "./config";
 
 const app = express();
 app.use(express.json());
@@ -56,15 +57,17 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
+  // Get port and host from config if available, otherwise use defaults
+  // In development, we always use port 5000 as it's the only non-firewalled port
+  const isDev = app.get("env") === "development";
+  const port = isDev ? 5000 : config.server.port;
+  const host = config.server.host;
+  
   server.listen({
     port,
-    host: "0.0.0.0",
+    host,
     reusePort: true,
   }, () => {
-    log(`serving on port ${port}`);
+    log(`serving on ${host}:${port} (${isDev ? 'development' : 'production'} mode)`);
   });
 })();
