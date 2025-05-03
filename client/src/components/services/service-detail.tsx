@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { ServiceDetailProps } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,24 @@ import { LogTable } from "@/components/services/log-table";
 import { LogLevelManager } from "@/components/services/log-level-manager";
 import { getStatusColor, getResourceUtilizationClass } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, RefreshCw, Power } from "lucide-react";
+import { 
+  ArrowLeft, RefreshCw, Power, ChevronDown, ChevronUp, 
+  Search, X, Filter 
+} from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Input } from "@/components/ui/input";
 
 export function ServiceDetail({ service, onBack, refreshService }: ServiceDetailProps) {
   const [logLevel, setLogLevel] = useState("ALL");
+  const [logSearch, setLogSearch] = useState("");
   const statusColor = getStatusColor(service.status);
-
+  
+  // State for collapsible sections
+  const [infoOpen, setInfoOpen] = useState(true);
+  const [metricsOpen, setMetricsOpen] = useState(true);
+  const [logLevelOpen, setLogLevelOpen] = useState(true);
+  const [logsOpen, setLogsOpen] = useState(true);
+  
   const memoryPercentage = service.memory 
     ? (service.memory.used / service.memory.max) * 100
     : 0;
@@ -23,11 +35,28 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
     ? service.cpu.used * 100 
     : 0;
 
-  const filteredLogs = service.logs 
-    ? logLevel === "ALL" 
-      ? service.logs 
-      : service.logs.filter(log => log.level === logLevel)
-    : [];
+  // Filter logs based on selected level and search term
+  const filteredLogs = useMemo(() => {
+    if (!service.logs) return [];
+    
+    let filtered = service.logs;
+    
+    // Filter by log level
+    if (logLevel !== "ALL") {
+      filtered = filtered.filter(log => log.level === logLevel);
+    }
+    
+    // Filter by search term
+    if (logSearch.trim()) {
+      const searchLower = logSearch.toLowerCase().trim();
+      filtered = filtered.filter(log => 
+        log.message.toLowerCase().includes(searchLower) ||
+        log.level.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    return filtered;
+  }, [service.logs, logLevel, logSearch]);
 
   return (
     <div className="space-y-6">
@@ -55,64 +84,94 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
         </h1>
       </div>
 
-      <Card>
-        <CardHeader className="px-6 py-5 flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-lg leading-6 font-medium">Service Information</CardTitle>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-              Details and metrics for this Spring Boot service.
-            </p>
-          </div>
-          <div className="flex space-x-2">
-            <Button 
-              size="sm"
-              className="inline-flex items-center text-white bg-primary-600 hover:bg-primary-700"
-              onClick={refreshService}
-            >
-              <RefreshCw className="h-4 w-4 mr-1" />
-              Restart
-            </Button>
-            <Button 
-              size="sm"
-              variant="outline"
-              className="inline-flex items-center border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-            >
-              View in Kubernetes
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="px-0 py-0">
-          <dl>
-            <div className="bg-gray-50 dark:bg-gray-900 px-6 py-5 grid grid-cols-3 gap-4">
-              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Service Name</dt>
-              <dd className="text-sm text-gray-900 dark:text-gray-300 col-span-2">{service.name}</dd>
+      {/* Service Information - Collapsible */}
+      <Collapsible open={infoOpen} onOpenChange={setInfoOpen} className="w-full">
+        <Card>
+          <CardHeader className="px-6 py-5 flex flex-row items-center justify-between">
+            <div>
+              <div className="flex items-center">
+                <CardTitle className="text-lg leading-6 font-medium">Service Information</CardTitle>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="ml-2 h-8 w-8 p-0">
+                    {infoOpen ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+              <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+                Details and metrics for this Spring Boot service.
+              </p>
             </div>
-            <div className="bg-white dark:bg-gray-800 px-6 py-5 grid grid-cols-3 gap-4">
-              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Version</dt>
-              <dd className="text-sm text-gray-900 dark:text-gray-300 col-span-2">v{service.version}</dd>
+            <div className="flex space-x-2">
+              <Button 
+                size="sm"
+                className="inline-flex items-center text-white bg-primary-600 hover:bg-primary-700"
+                onClick={refreshService}
+              >
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Restart
+              </Button>
+              <Button 
+                size="sm"
+                variant="outline"
+                className="inline-flex items-center border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+              >
+                View in Kubernetes
+              </Button>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-900 px-6 py-5 grid grid-cols-3 gap-4">
-              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Namespace</dt>
-              <dd className="text-sm text-gray-900 dark:text-gray-300 col-span-2">{service.namespace}</dd>
-            </div>
-            <div className="bg-white dark:bg-gray-800 px-6 py-5 grid grid-cols-3 gap-4">
-              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Pod Name</dt>
-              <dd className="text-sm text-gray-900 dark:text-gray-300 col-span-2">{service.podName}</dd>
-            </div>
-          </dl>
-        </CardContent>
-      </Card>
+          </CardHeader>
+          
+          <CollapsibleContent>
+            <CardContent className="px-0 py-0">
+              <dl>
+                <div className="bg-gray-50 dark:bg-gray-900 px-6 py-5 grid grid-cols-3 gap-4">
+                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Service Name</dt>
+                  <dd className="text-sm text-gray-900 dark:text-gray-300 col-span-2">{service.name}</dd>
+                </div>
+                <div className="bg-white dark:bg-gray-800 px-6 py-5 grid grid-cols-3 gap-4">
+                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Version</dt>
+                  <dd className="text-sm text-gray-900 dark:text-gray-300 col-span-2">v{service.version}</dd>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-900 px-6 py-5 grid grid-cols-3 gap-4">
+                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Namespace</dt>
+                  <dd className="text-sm text-gray-900 dark:text-gray-300 col-span-2">{service.namespace}</dd>
+                </div>
+                <div className="bg-white dark:bg-gray-800 px-6 py-5 grid grid-cols-3 gap-4">
+                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Pod Name</dt>
+                  <dd className="text-sm text-gray-900 dark:text-gray-300 col-span-2">{service.podName}</dd>
+                </div>
+              </dl>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
-      {/* Metrics Section */}
-      <Card>
-        <CardHeader className="px-6 py-5">
-          <CardTitle className="text-lg leading-6 font-medium">Resources & Metrics</CardTitle>
-          <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            Current resource utilization and metrics.
-          </p>
-        </CardHeader>
-        <CardContent className="p-6 border-t border-gray-200 dark:border-gray-700">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Metrics Section - Collapsible */}
+      <Collapsible open={metricsOpen} onOpenChange={setMetricsOpen} className="w-full">
+        <Card>
+          <CardHeader className="px-6 py-5">
+            <div className="flex items-center">
+              <CardTitle className="text-lg leading-6 font-medium">Resources & Metrics</CardTitle>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="ml-2 h-8 w-8 p-0">
+                  {metricsOpen ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+            <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+              Current resource utilization and metrics.
+            </p>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent className="p-6 border-t border-gray-200 dark:border-gray-700">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {/* Memory usage */}
             <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
               <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Memory Usage</div>
@@ -225,8 +284,10 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {/* Log Level Management Section */}
       <Card>

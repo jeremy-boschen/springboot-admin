@@ -171,6 +171,7 @@ export async function collectServiceLogs(serviceId: number, actuatorUrl: string)
       // Create log entry
       const logData: InsertLog = {
         serviceId,
+        timestamp, // Include the timestamp
         level,
         message
       };
