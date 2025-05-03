@@ -12,8 +12,12 @@ RUN npm ci
 # Copy the source code
 COPY . .
 
+# Set environment to production for the build
+ENV NODE_ENV=production
+
 # Build the application (both server and client)
-RUN npm run build
+# We must explicitly set NODE_ENV=production for the build
+RUN NODE_ENV=production npm run build
 
 # Stage 2: Create the production image
 FROM node:20-alpine AS production
@@ -22,16 +26,18 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-# Copy the entire dist directory which includes:
-# - server bundle (dist/index.js)
-# - client assets (dist/public/*)
-COPY --from=builder /app/dist ./dist
 
 # Install only production dependencies
 RUN npm ci --only=production
 
 # Add configuration
 COPY config.yaml /app/config.yaml
+
+# Copy server file (built with esbuild)
+COPY --from=builder /app/dist/index.js ./server.js
+
+# Copy static files for the client (built with Vite)
+COPY --from=builder /app/dist/public ./public
 
 # Set environment variables
 ENV NODE_ENV=production
@@ -45,5 +51,5 @@ USER appuser
 # Expose the port
 EXPOSE 3000
 
-# Start the application using the correct path to the server bundle
-CMD ["node", "dist/index.js"]
+# Start the application
+CMD ["node", "server.js"]
