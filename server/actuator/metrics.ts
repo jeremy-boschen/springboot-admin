@@ -122,21 +122,43 @@ export async function collectServiceLogs(serviceId: number, actuatorUrl: string)
     }
     
     // Process log lines and create entries
-    // Only store a subset of logs to avoid database bloat
-    const logsToProcess = service.status === 'DOWN' ? logLines : logLines.slice(-5);
+    // Store more logs to demonstrate all log levels
+    const logsToProcess = logLines;
     
     for (const line of logsToProcess) {
-      // Simple log parser for common formats
+      // Parse log line with regex to extract timestamp, level, and message
+      // Expected format: "2025-05-03 10:15:32.789 INFO  [main] Message..."
+      const match = line.match(/(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3})\s(ERROR|WARN|INFO|DEBUG|TRACE)\s+\[(.*?)\]\s(.+)/);
+      
+      let timestamp = new Date();
       let level = 'INFO';
       let message = line;
       
-      // Try to detect log level
-      if (line.includes('ERROR')) {
-        level = 'ERROR';
-      } else if (line.includes('WARN')) {
-        level = 'WARNING';
-      } else if (line.includes('DEBUG')) {
-        level = 'DEBUG';
+      if (match) {
+        const [, timestampStr, levelStr, thread, msg] = match;
+        
+        // Parse timestamp
+        const parsedDate = new Date(timestampStr);
+        if (!isNaN(parsedDate.getTime())) {
+          timestamp = parsedDate;
+        }
+        
+        // Set level, mapping WARN to WARNING for consistency
+        level = levelStr === 'WARN' ? 'WARNING' : levelStr;
+        
+        // Include thread name in message
+        message = `[${thread}] ${msg}`;
+      } else {
+        // Fallback for lines that don't match the pattern
+        if (line.includes('ERROR')) {
+          level = 'ERROR';
+        } else if (line.includes('WARN')) {
+          level = 'WARNING';
+        } else if (line.includes('DEBUG')) {
+          level = 'DEBUG';
+        } else if (line.includes('TRACE')) {
+          level = 'TRACE';
+        }
       }
       
       // For services with warning or down status, ensure some error logs
