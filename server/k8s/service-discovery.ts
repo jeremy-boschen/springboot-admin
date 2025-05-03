@@ -69,6 +69,23 @@ const MOCK_SERVICES = [
   }
 ];
 
+/**
+ * Spring Boot Service Discovery for Kubernetes Clusters
+ * 
+ * This function discovers Spring Boot applications running in a Kubernetes cluster
+ * by searching for pods with specific labels and annotations. It supports:
+ * 
+ * 1. Auto-detection of Spring Boot applications in any namespace
+ * 2. Integration with Spring Boot Actuator endpoints for health and metrics
+ * 3. Automatic service registration and status tracking
+ * 
+ * The discovery process operates in two modes:
+ * - Development mode: Uses mock data for offline development
+ * - Production mode: Connects to the Kubernetes API to discover real services
+ * 
+ * Once services are discovered, they are registered in the application's storage
+ * system for tracking and monitoring.
+ */
 export async function discoverSpringBootServices() {
   // In development/demo mode, use mock data instead of real Kubernetes discovery
   const useMockData = !config.kubernetes.inCluster;
@@ -115,7 +132,16 @@ export async function discoverSpringBootServices() {
   }
 }
 
-// Process mock services for development/demo
+/**
+ * Process mock services for development and testing environments
+ * 
+ * This function is used in development mode to populate the application
+ * with predefined service data, allowing developers to test and work on
+ * the application without needing an actual Kubernetes cluster.
+ * 
+ * The mock services simulate different statuses (UP, DOWN, WARNING) and
+ * provide realistic service metadata for testing all application features.
+ */
 async function processMockServices() {
   for (const mockService of MOCK_SERVICES) {
     try {
@@ -137,7 +163,24 @@ async function processMockServices() {
   }
 }
 
-// Process a discovered pod (for production mode)
+/**
+ * Process a discovered Kubernetes pod that contains a Spring Boot application
+ * 
+ * This function extracts information from a Kubernetes pod object and interacts
+ * with the Spring Boot Actuator endpoints to gather health and version information.
+ * It then creates or updates the application's database record for the service.
+ * 
+ * Key aspects of service discovery:
+ * - Extracts pod metadata like name, namespace, and labels
+ * - Constructs the in-cluster DNS name for reliable communication
+ * - Detects management port and context path from annotations or defaults
+ * - Retrieves health status and version via Actuator endpoints
+ * - Persists service details in the application database
+ * 
+ * If the service is unreachable, it will still be registered but marked as DOWN.
+ * 
+ * @param pod Kubernetes pod object containing a Spring Boot application
+ */
 async function processDiscoveredPod(pod: any) {
   const podName = pod.metadata?.name;
   const namespace = pod.metadata?.namespace;
@@ -224,7 +267,22 @@ async function processDiscoveredPod(pod: any) {
   }
 }
 
-// Run service discovery on a schedule
+/**
+ * Schedule regular service discovery to maintain an up-to-date service registry
+ * 
+ * This function sets up a recurring interval to automatically discover and update
+ * Spring Boot services in the Kubernetes cluster. It ensures that:
+ * 
+ * - New services are automatically registered when they become available
+ * - Service status changes are detected and updated
+ * - Services that are no longer available are marked as DOWN
+ * 
+ * The discovery interval can be configured in the application's config file
+ * or overridden by providing an explicit interval parameter.
+ * 
+ * @param intervalMs Optional interval in milliseconds between discovery runs
+ * @returns The interval ID that can be used to cancel scheduled discovery
+ */
 export function scheduleServiceDiscovery(intervalMs?: number) {
   // Use config interval if not explicitly provided
   const discoveryInterval = intervalMs || config.kubernetes.serviceDiscoveryInterval;

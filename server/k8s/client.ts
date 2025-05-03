@@ -218,7 +218,18 @@ export class KubernetesClient {
     }
   }
 
-  // Restart a deployment
+  /**
+   * Restarts a Kubernetes deployment by adding a restart annotation
+   * 
+   * This method triggers a rolling restart of a deployment by adding or updating
+   * the "kubectl.kubernetes.io/restartedAt" annotation with the current timestamp,
+   * which causes Kubernetes to recreate all pods in the deployment without changing
+   * any configuration.
+   * 
+   * @param namespace The namespace containing the deployment
+   * @param name The name of the deployment to restart
+   * @returns The updated deployment object with status information
+   */
   async restartDeployment(namespace: string, name: string) {
     if (this.useRealCluster && this.k8sAppsApi) {
       try {
@@ -263,7 +274,18 @@ export class KubernetesClient {
     }
   }
 
-  // Get logs for a pod
+  /**
+   * Retrieves container logs from a specified pod
+   * 
+   * This method fetches logs from a pod in a Kubernetes cluster, allowing for diagnosis
+   * of application issues. It retrieves recent logs (last 1000 lines) from the specified
+   * pod, and optionally from a specific container if the pod contains multiple containers.
+   * 
+   * @param namespace The namespace containing the pod
+   * @param podName The name of the pod to get logs from
+   * @param containerName Optional container name if the pod has multiple containers
+   * @returns String containing the pod's logs
+   */
   async getPodLogs(namespace: string, podName: string, containerName?: string) {
     if (this.useRealCluster && this.k8sApi) {
       try {
