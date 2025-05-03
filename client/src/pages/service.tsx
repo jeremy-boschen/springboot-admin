@@ -31,7 +31,7 @@ export default function ServicePage() {
     error, 
     refreshService 
   } = useServiceDetails(id);
-
+  
   useEffect(() => {
     if (isError) {
       toast({
@@ -41,6 +41,15 @@ export default function ServicePage() {
       });
     }
   }, [isError, error, toast]);
+  
+  // Determine which section to open based on URL parameter
+  const initialSections = {
+    info: section === 'info',
+    metrics: section === 'metrics',
+    config: section === 'config',
+    loglevels: section === 'loglevels',
+    logs: section === 'logs' || !section, // Default to logs open if no section specified
+  };
 
   if (isLoading) {
     return <ServiceDetailSkeleton />;
@@ -79,6 +88,7 @@ export default function ServicePage() {
         service={service} 
         onBack={() => setLocation("/")}
         refreshService={refreshService}
+        initialSections={initialSections}
       />
     </div>
   );

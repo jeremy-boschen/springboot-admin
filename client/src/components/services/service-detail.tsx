@@ -33,7 +33,18 @@ import { Input } from "@/components/ui/input";
  * Supports deep linking to specific sections via URL parameters
  * and real-time log streaming via WebSockets.
  */
-export function ServiceDetail({ service, onBack, refreshService }: ServiceDetailProps) {
+export function ServiceDetail({ 
+  service, 
+  onBack, 
+  refreshService, 
+  initialSections = {
+    info: true,
+    metrics: true,
+    loglevels: true,
+    config: true,
+    logs: true
+  }
+}: ServiceDetailProps) {
   const [location, setLocation] = useState("");
   const [logLevel, setLogLevel] = useState("ALL");
   const [logSearch, setLogSearch] = useState("");
@@ -42,11 +53,11 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
   const statusColor = getStatusColor(service.status);
   
   // State for collapsible sections with deep linking support
-  const [infoOpen, setInfoOpen] = useState(true);
-  const [metricsOpen, setMetricsOpen] = useState(true);
-  const [logLevelOpen, setLogLevelOpen] = useState(true);
-  const [configOpen, setConfigOpen] = useState(true);
-  const [logsOpen, setLogsOpen] = useState(true);
+  const [infoOpen, setInfoOpen] = useState(initialSections.info);
+  const [metricsOpen, setMetricsOpen] = useState(initialSections.metrics);
+  const [logLevelOpen, setLogLevelOpen] = useState(initialSections.loglevels);
+  const [configOpen, setConfigOpen] = useState(initialSections.config);
+  const [logsOpen, setLogsOpen] = useState(initialSections.logs);
   
   // Get the current section from URL if any
   useEffect(() => {

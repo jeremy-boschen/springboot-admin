@@ -22,6 +22,13 @@ export interface ServiceDetailProps {
   service: ServiceDetail;
   onBack: () => void;
   refreshService: () => void;
+  initialSections?: {
+    info?: boolean;
+    metrics?: boolean;
+    loglevels?: boolean;
+    config?: boolean;
+    logs?: boolean;
+  };
 }
 
 export interface MetricsChartProps {
