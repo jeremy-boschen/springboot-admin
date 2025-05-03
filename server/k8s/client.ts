@@ -1,4 +1,5 @@
 import * as k8s from '@kubernetes/client-node';
+import config from '../config';
 
 // Mock data for development
 const MOCK_NAMESPACES = [
@@ -83,25 +84,37 @@ export class KubernetesClient {
   private k8sAppsApi: k8s.AppsV1Api | null = null;
 
   constructor() {
-    this.useRealCluster = false;
+    this.useRealCluster = config.kubernetes.inCluster;
     
     // Only initialize real clients if we're using a real cluster
     if (this.useRealCluster) {
       try {
         const kc = new k8s.KubeConfig();
         
-        try {
-          // Tries to load from kube config in cluster
-          kc.loadFromCluster();
-          console.log('Running in cluster mode, using in-cluster config');
-        } catch (error) {
-          // Fallback to local config for development
-          console.log('Unable to load in-cluster config, using local config');
-          kc.loadFromDefault();
+        if (config.kubernetes.kubeconfig) {
+          // Use specified kubeconfig file
+          console.log(`Loading kubeconfig from ${config.kubernetes.kubeconfig}`);
+          kc.loadFromFile(config.kubernetes.kubeconfig);
+        } else {
+          try {
+            // Tries to load from kube config in cluster
+            kc.loadFromCluster();
+            console.log('Running in cluster mode, using in-cluster config');
+          } catch (error) {
+            // Fallback to local config for development
+            console.log('Unable to load in-cluster config, using local config');
+            kc.loadFromDefault();
+          }
         }
 
         this.k8sApi = kc.makeApiClient(k8s.CoreV1Api);
         this.k8sAppsApi = kc.makeApiClient(k8s.AppsV1Api);
+        
+        if (config.kubernetes.namespace) {
+          console.log(`Using namespace: ${config.kubernetes.namespace}`);
+        } else {
+          console.log('Watching all namespaces');
+        }
       } catch (error) {
         console.error('Error initializing Kubernetes client, will use mock data:', error);
         this.useRealCluster = false;

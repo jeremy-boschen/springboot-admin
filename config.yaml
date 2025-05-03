@@ -1,0 +1,30 @@
+server:
+  port: 3000
+  host: 0.0.0.0
+
+kubernetes:
+  inCluster: false
+  # kubeconfig: /path/to/kubeconfig  # Optional, uses in-cluster config if not specified
+  # namespace: default               # Optional, watches all namespaces if not specified
+  serviceDiscoveryInterval: 60000    # milliseconds
+
+actuator:
+  defaultPort: 8080
+  basePath: /actuator
+  endpoints:
+    health: /health
+    info: /info
+    metrics: /metrics
+    logfile: /logfile
+  # Annotations to look for in pods/services to find management port and context path
+  managementPortAnnotation: spring-boot/management-port
+  managementContextPathAnnotation: spring-boot/management-context-path
+
+metrics:
+  collectionInterval: 30000         # milliseconds
+  retention:
+    days: 7
+    maxEntries: 1000
+
+logging:
+  level: info                        # debug, info, warn, error
