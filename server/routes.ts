@@ -145,7 +145,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const logs = await storage.getLogsForService(serviceId, 100);
-      res.json(logs);
+      
+      // Ensure that all log entries have valid timestamps
+      const sanitizedLogs = logs.map(log => {
+        // Create a sanitized copy with guaranteed timestamp
+        return {
+          ...log,
+          timestamp: log.timestamp || new Date().toISOString()
+        };
+      });
+      
+      res.json(sanitizedLogs);
     } catch (error) {
       console.error('Error fetching logs:', error);
       res.status(500).json({ error: 'Failed to fetch logs' });

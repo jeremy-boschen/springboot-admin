@@ -43,7 +43,7 @@ export function LogTable({ logs, loading = false }: LogTableProps) {
                 </Badge>
               </TableCell>
               <TableCell className="text-sm text-gray-500 dark:text-gray-400">
-                {formatDate(new Date(log.timestamp))}
+                {log.timestamp ? formatDate(new Date(log.timestamp)) : 'N/A'}
               </TableCell>
               <TableCell className="text-sm text-gray-500 dark:text-gray-400 font-mono">
                 {log.message}

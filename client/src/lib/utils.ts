@@ -12,7 +12,12 @@ export function formatUptime(startTime: Date): string {
 }
 
 export function formatDate(date: Date): string {
-  return format(date, 'yyyy-MM-dd HH:mm:ss');
+  try {
+    return format(date, 'yyyy-MM-dd HH:mm:ss');
+  } catch (error) {
+    console.error('Invalid date format:', error);
+    return 'Invalid date';
+  }
 }
 
 export function formatMemory(bytes: number): string {
