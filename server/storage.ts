@@ -9,7 +9,8 @@ import {
   Log, 
   ServiceStatus,
   ConfigProperty,
-  InsertConfigProperty
+  InsertConfigProperty,
+  ServiceRegistration
 } from "@shared/schema";
 
 export interface IStorage {
@@ -22,10 +23,18 @@ export interface IStorage {
   getAllServices(): Promise<Service[]>;
   getService(id: number): Promise<Service | undefined>;
   getServiceByPodName(podName: string): Promise<Service | undefined>;
+  getServiceByAppId(appId: string): Promise<Service | undefined>;
   createService(service: InsertService): Promise<Service>;
   updateService(id: number, data: Partial<InsertService>): Promise<Service>;
   updateServiceStatus(id: number, status: ServiceStatus): Promise<Service>;
+  updateServiceLastSeen(id: number): Promise<Service>;
   deleteService(id: number): Promise<void>;
+  
+  // Service registration methods
+  registerService(registration: ServiceRegistration): Promise<Service>;
+  
+  // Health check methods
+  getServicesForHealthCheck(maxAge?: number): Promise<Service[]>;
   
   // Metrics methods
   getMetricsForService(serviceId: number, limit?: number): Promise<Metric[]>;
@@ -260,6 +269,12 @@ export class MemStorage implements IStorage {
     );
   }
   
+  async getServiceByAppId(appId: string): Promise<Service | undefined> {
+    return Array.from(this.services.values()).find(
+      (service) => service.appId === appId,
+    );
+  }
+  
   async createService(insertService: InsertService): Promise<Service> {
     const id = this.currentServiceId++;
     const service: Service = { 
@@ -296,10 +311,101 @@ export class MemStorage implements IStorage {
     return this.updateService(id, { status });
   }
   
+  async updateServiceLastSeen(id: number): Promise<Service> {
+    const service = this.services.get(id);
+    if (!service) {
+      throw new Error(`Service with id ${id} not found`);
+    }
+    
+    const updatedService: Service = { 
+      ...service, 
+      lastSeen: new Date(),
+    };
+    
+    this.services.set(id, updatedService);
+    return updatedService;
+  }
+  
   async deleteService(id: number): Promise<void> {
     this.services.delete(id);
     this.metrics.delete(id);
     this.logs.delete(id);
+  }
+  
+  // Service registration methods
+  async registerService(registration: ServiceRegistration): Promise<Service> {
+    // Extract host and port from the actuator URL if not provided
+    let hostAddress = registration.hostAddress;
+    let port = registration.port;
+    
+    if (!hostAddress || !port) {
+      try {
+        const url = new URL(registration.actuatorBaseUrl);
+        hostAddress = hostAddress || url.hostname;
+        port = port || (url.port ? parseInt(url.port) : (url.protocol === 'https:' ? 443 : 80));
+      } catch (error) {
+        console.error('Failed to parse actuator URL:', error);
+      }
+    }
+    
+    // Check if this service has already registered with an appId
+    let existingService: Service | undefined;
+    
+    if (registration.appId) {
+      existingService = await this.getServiceByAppId(registration.appId);
+    }
+    
+    // Generate health check URL
+    const healthUrl = registration.actuatorBaseUrl + (registration.healthCheckPath || '/actuator/health');
+    
+    // Prepare service data
+    const serviceData: InsertService = {
+      name: registration.name,
+      namespace: 'default', // Default namespace for directly registered services
+      version: registration.version || 'unknown',
+      status: 'UNKNOWN', // Will be updated by health check
+      actuatorUrl: registration.actuatorBaseUrl,
+      registrationSource: 'direct',
+      hostAddress,
+      port: port as number, // TypeScript needs help here
+      contextPath: registration.contextPath || '',
+      appId: registration.appId || crypto.randomUUID(), // Generate UUID if not provided
+      healthCheckPath: registration.healthCheckPath || '/actuator/health',
+      metricsPath: registration.metricsPath || '/actuator/metrics',
+      logsPath: registration.logsPath || '/actuator/logfile',
+      configPath: registration.configPath || '/actuator/env',
+      autoRegister: registration.autoRegister || false,
+      healthCheckInterval: registration.healthCheckInterval || 30,
+    };
+    
+    // Update or create service
+    if (existingService) {
+      return this.updateService(existingService.id, serviceData);
+    } else {
+      return this.createService(serviceData);
+    }
+  }
+  
+  // Health check methods
+  async getServicesForHealthCheck(maxAge: number = 60): Promise<Service[]> {
+    const now = new Date();
+    const cutoffTime = new Date(now.getTime() - (maxAge * 1000));
+    
+    return Array.from(this.services.values()).filter(service => {
+      // Skip services that don't need checking
+      if (service.status === 'DOWN' && service.lastSeen && service.lastSeen < cutoffTime) {
+        return false;
+      }
+      
+      // Check based on interval if specified
+      if (service.healthCheckInterval && service.lastSeen) {
+        const nextCheckTime = new Date(service.lastSeen.getTime() + (service.healthCheckInterval * 1000));
+        return now >= nextCheckTime;
+      }
+      
+      // Default: check services that haven't been checked recently
+      return !service.lastSeen || service.lastSeen < cutoffTime;
+    });
   }
   
   // Metrics methods

@@ -2,17 +2,29 @@ import { pgTable, text, serial, integer, boolean, timestamp, real, jsonb } from 
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// K8s Service with Spring Boot application
+// Spring Boot application services
 export const services = pgTable("services", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  namespace: text("namespace").notNull(),
+  namespace: text("namespace").notNull().default("default"),
   version: text("version").notNull().default("unknown"),
-  podName: text("pod_name").notNull(),
+  podName: text("pod_name"), // May be null for directly registered services
   status: text("status").notNull().default("UNKNOWN"),
   lastUpdated: timestamp("last_updated").notNull().defaultNow(),
-  clusterDns: text("cluster_dns").notNull(),
+  lastSeen: timestamp("last_seen"), // Timestamp of last successful health check
+  clusterDns: text("cluster_dns"), // May be null for directly registered services
   actuatorUrl: text("actuator_url").notNull(),
+  healthCheckPath: text("health_check_path"), // Custom health check path (if provided)
+  registrationSource: text("registration_source").notNull().default("kubernetes"), // kubernetes, direct, or manual
+  hostAddress: text("host_address"), // Direct IP or hostname for directly registered services
+  port: integer("port"), // Port number for directly registered services
+  contextPath: text("context_path"), // Application context path (if not at root)
+  appId: text("app_id"), // Unique application identifier (may be used for re-registration)
+  metricsPath: text("metrics_path"), // Path to metrics endpoint (if custom)
+  logsPath: text("logs_path"), // Path to logs endpoint (if custom)
+  configPath: text("config_path"), // Path to configuration endpoint (if custom)
+  autoRegister: boolean("auto_register").notNull().default(false), // Whether to auto re-register on restart
+  healthCheckInterval: integer("health_check_interval"), // Custom health check interval in seconds
 });
 
 // Service metrics
@@ -65,6 +77,34 @@ export type InsertLog = z.infer<typeof insertLogSchema>;
 // Frontend-specific types
 export const ServiceStatusEnum = z.enum(["UP", "DOWN", "WARNING", "UNKNOWN"]);
 export type ServiceStatus = z.infer<typeof ServiceStatusEnum>;
+
+// Registration source types
+export const RegistrationSourceEnum = z.enum(["kubernetes", "direct", "manual"]);
+export type RegistrationSource = z.infer<typeof RegistrationSourceEnum>;
+
+// Service registration schema
+export const serviceRegistrationSchema = z.object({
+  // Required fields
+  name: z.string().min(1, "Service name is required"),
+  actuatorBaseUrl: z.string().url("A valid actuator base URL is required"),
+  
+  // Optional fields with defaults
+  appId: z.string().optional(),
+  version: z.string().optional(),
+  healthCheckPath: z.string().optional().default("/actuator/health"),
+  metricsPath: z.string().optional().default("/actuator/metrics"),
+  logsPath: z.string().optional().default("/actuator/logfile"),
+  configPath: z.string().optional().default("/actuator/env"),
+  healthCheckInterval: z.number().int().positive().optional().default(30),
+  autoRegister: z.boolean().optional().default(false),
+  
+  // Connection details
+  hostAddress: z.string().optional(),
+  port: z.number().int().positive().optional(),
+  contextPath: z.string().optional().default(""),
+});
+
+export type ServiceRegistration = z.infer<typeof serviceRegistrationSchema>;
 
 export interface ServiceDetail extends Service {
   memory?: {
