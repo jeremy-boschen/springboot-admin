@@ -69,8 +69,8 @@ export class MemStorage implements IStorage {
     this.currentLogId = 1;
     this.currentConfigPropertyId = 1;
     
-    // Initialize with mock data
-    this.initializeMockData();
+    // Do NOT initialize mock data - we'll let the service discovery process handle this
+    // based on the configuration (real K8s vs development mode)
   }
   
   private initializeMockData() {
