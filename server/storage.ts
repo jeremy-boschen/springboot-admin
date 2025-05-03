@@ -68,6 +68,163 @@ export class MemStorage implements IStorage {
     this.currentMetricId = 1;
     this.currentLogId = 1;
     this.currentConfigPropertyId = 1;
+    
+    // Initialize with mock data
+    this.initializeMockData();
+  }
+  
+  private initializeMockData() {
+    // Add mock config properties for customer-service (ID 1)
+    const customerServiceConfigProps = [
+      {
+        id: this.currentConfigPropertyId++,
+        serviceId: 1,
+        key: "spring.application.name",
+        value: "customer-service",
+        type: "STRING",
+        source: "application.properties",
+        description: "The name of the application",
+        isActive: true,
+        lastUpdated: new Date()
+      },
+      {
+        id: this.currentConfigPropertyId++,
+        serviceId: 1,
+        key: "server.port",
+        value: "8080",
+        type: "NUMBER",
+        source: "application.properties",
+        description: "The server port",
+        isActive: true,
+        lastUpdated: new Date()
+      },
+      {
+        id: this.currentConfigPropertyId++,
+        serviceId: 1,
+        key: "spring.datasource.url",
+        value: "jdbc:postgresql://localhost:5432/customers",
+        type: "STRING",
+        source: "application.properties",
+        description: "Database connection URL",
+        isActive: true,
+        lastUpdated: new Date()
+      },
+      {
+        id: this.currentConfigPropertyId++,
+        serviceId: 1,
+        key: "logging.level.root",
+        value: "INFO",
+        type: "STRING",
+        source: "application.yml",
+        description: "Root logging level",
+        isActive: true,
+        lastUpdated: new Date()
+      },
+      {
+        id: this.currentConfigPropertyId++,
+        serviceId: 1,
+        key: "management.endpoints.web.exposure.include",
+        value: "*",
+        type: "STRING",
+        source: "application.yml",
+        description: "Expose all actuator endpoints",
+        isActive: true,
+        lastUpdated: new Date()
+      }
+    ];
+    
+    // Add config properties
+    this.configProperties.set(1, customerServiceConfigProps);
+    
+    // Add mock logs for customer-service (ID 1)
+    const now = new Date();
+    const customerServiceLogs = [
+      {
+        id: this.currentLogId++,
+        serviceId: 1,
+        timestamp: new Date(now.getTime() - 500),
+        message: "Application started successfully",
+        level: "INFO"
+      },
+      {
+        id: this.currentLogId++,
+        serviceId: 1,
+        timestamp: new Date(now.getTime() - 400),
+        message: "Connected to database customers",
+        level: "INFO"
+      },
+      {
+        id: this.currentLogId++,
+        serviceId: 1,
+        timestamp: new Date(now.getTime() - 300),
+        message: "Failed to validate customer data: Missing email",
+        level: "ERROR"
+      },
+      {
+        id: this.currentLogId++,
+        serviceId: 1,
+        timestamp: new Date(now.getTime() - 200),
+        message: "JPA repository initialized",
+        level: "DEBUG"
+      },
+      {
+        id: this.currentLogId++,
+        serviceId: 1,
+        timestamp: new Date(now.getTime() - 100),
+        message: "Customer created: ID=12345",
+        level: "INFO"
+      },
+      {
+        id: this.currentLogId++,
+        serviceId: 1,
+        timestamp: new Date(),
+        message: "API request received: GET /api/customers/12345",
+        level: "INFO"
+      }
+    ];
+    
+    // Add logs
+    this.logs.set(1, customerServiceLogs);
+    
+    // Add mock config properties for order-service (ID 2)
+    const orderServiceConfigProps = [
+      {
+        id: this.currentConfigPropertyId++,
+        serviceId: 2,
+        key: "spring.application.name",
+        value: "order-service",
+        type: "STRING",
+        source: "application.properties",
+        description: "The name of the application",
+        isActive: true,
+        lastUpdated: new Date()
+      },
+      {
+        id: this.currentConfigPropertyId++,
+        serviceId: 2,
+        key: "server.port",
+        value: "8080",
+        type: "NUMBER",
+        source: "application.properties",
+        description: "The server port",
+        isActive: true,
+        lastUpdated: new Date()
+      },
+      {
+        id: this.currentConfigPropertyId++,
+        serviceId: 2,
+        key: "spring.datasource.url",
+        value: "jdbc:postgresql://localhost:5432/orders",
+        type: "STRING",
+        source: "application.properties",
+        description: "Database connection URL",
+        isActive: true,
+        lastUpdated: new Date()
+      }
+    ];
+    
+    // Add config properties
+    this.configProperties.set(2, orderServiceConfigProps);
   }
 
   // User methods
