@@ -167,9 +167,9 @@ export function LogLevelManager({ serviceId }: LogLevelManagerProps) {
                         <SelectValue placeholder="Select level" />
                       </SelectTrigger>
                       <SelectContent>
-                        {logLevels.map(level => (
+                        {logLevels.map((level: string) => (
                           <SelectItem key={level} value={level}>
-                            <Badge variant="outline" className={getLogLevelColor(level)}>
+                            <Badge variant="outline" className={getLogLevelColor(level || 'INFO')}>
                               {level}
                             </Badge>
                           </SelectItem>
