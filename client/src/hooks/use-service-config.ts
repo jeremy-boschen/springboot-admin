@@ -100,10 +100,19 @@ export function useServiceConfig(serviceId: number | string | null) {
         throw new Error("No service selected");
       }
       
-      return apiRequest({
-        url: `/api/services/${serviceIdStr}/config/${id}`,
-        method: "DELETE"
+      // For DELETE requests that return 204 No Content
+      const response = await fetch(`/api/services/${serviceIdStr}/config/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
       });
+      
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || response.statusText);
+      }
+      
+      // Return success flag since the endpoint returns no content
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: configQueryKey });
