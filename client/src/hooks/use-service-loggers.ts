@@ -14,6 +14,11 @@ interface LoggersResponse {
   };
 }
 
+interface SetLogLevelParams {
+  logger: string;
+  level: string;
+}
+
 export function useServiceLoggers(serviceId: number | null) {
   const [selectedLogger, setSelectedLogger] = useState<string | null>(null);
   
@@ -27,7 +32,16 @@ export function useServiceLoggers(serviceId: number | null) {
     queryKey: ['/api/services', serviceId, 'loggers'],
     queryFn: async () => {
       if (!serviceId) return null;
-      return await apiRequest<LoggersResponse>(`/api/services/${serviceId}/loggers`);
+      
+      // Directly use fetch for better type control
+      const response = await fetch(`/api/services/${serviceId}/loggers`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch loggers data');
+      }
+      
+      // Get the response data and cast it to expected type
+      const data = await response.json();
+      return data as LoggersResponse;
     },
     enabled: !!serviceId,
     staleTime: 30000,
@@ -38,18 +52,22 @@ export function useServiceLoggers(serviceId: number | null) {
     mutate: setLogLevel, 
     isPending: isSettingLogLevel,
   } = useMutation({
-    mutationFn: async ({ 
-      logger, 
-      level 
-    }: { 
-      logger: string; 
-      level: string;
-    }) => {
+    mutationFn: async (params: SetLogLevelParams) => {
       if (!serviceId) throw new Error('Service ID is required');
-      return await apiRequest(
-        `/api/services/${serviceId}/loggers/${encodeURIComponent(logger)}`,
-        { method: 'POST', body: JSON.stringify({ level }) }
-      );
+      
+      // Create API request options
+      const url = `/api/services/${serviceId}/loggers/${encodeURIComponent(params.logger)}`;
+      const options = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ level: params.level })
+      };
+      
+      // Make the API request
+      return await fetch(url, options).then(async (res) => {
+        if (!res.ok) throw new Error('Failed to set log level');
+        return await res.json();
+      });
     },
     onSuccess: () => {
       // Refetch loggers to update the UI with new log levels
@@ -57,18 +75,22 @@ export function useServiceLoggers(serviceId: number | null) {
     },
   });
 
-  // Extract available log levels
+  // Extract available log levels with fallback
   const logLevels = loggersData?.levels || ['ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'];
   
   // Get list of loggers with their current levels
   const loggers = loggersData?.loggers || {};
   
   // Create array of logger entries for easier rendering in UI
-  const loggersList = Object.entries(loggers).map(([name, config]) => ({
-    name,
-    configuredLevel: config.configuredLevel,
-    effectiveLevel: config.effectiveLevel
-  }));
+  const loggersList = Object.entries(loggers).map(([name, config]) => {
+    // Ensure we have valid type information by casting
+    const typedConfig = config as Logger;
+    return {
+      name,
+      configuredLevel: typedConfig.configuredLevel,
+      effectiveLevel: typedConfig.effectiveLevel
+    };
+  });
   
   return {
     loggersList,

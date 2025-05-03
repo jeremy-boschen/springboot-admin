@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MetricsChart } from "@/components/services/metrics-chart";
 import { LogTable } from "@/components/services/log-table";
+import { LogLevelManager } from "@/components/services/log-level-manager";
 import { getStatusColor, getResourceUtilizationClass } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, RefreshCw, Power } from "lucide-react";
@@ -226,6 +227,9 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
           </div>
         </CardContent>
       </Card>
+
+      {/* Log Level Management Section */}
+      {service.id && <LogLevelManager serviceId={service.id} />}
 
       {/* Logs Section */}
       <Card>
