@@ -27,6 +27,12 @@ const ConfigSchema = z.object({
     managementPortAnnotation: z.string().default('spring-boot/management-port'),
     managementContextPathAnnotation: z.string().default('spring-boot/management-context-path'),
   }),
+  healthCheck: z.object({
+    intervalMs: z.number().default(30000), // Default is 30 seconds
+    timeoutMs: z.number().default(5000),   // Default is 5 seconds
+    retryCount: z.number().default(3),     // Default is 3 retries
+    retryDelayMs: z.number().default(5000) // Default is 5 seconds
+  }),
   metrics: z.object({
     collectionInterval: z.number().default(30000),
     retention: z.object({
@@ -68,6 +74,12 @@ const defaultConfig: AppConfig = {
     },
     managementPortAnnotation: 'spring-boot/management-port',
     managementContextPathAnnotation: 'spring-boot/management-context-path',
+  },
+  healthCheck: {
+    intervalMs: 30000,
+    timeoutMs: 5000,
+    retryCount: 3,
+    retryDelayMs: 5000
   },
   metrics: {
     collectionInterval: 30000,

@@ -47,6 +47,14 @@ app.use((req, res, next) => {
     res.status(status).json({ message });
     throw err;
   });
+  
+  // Set up health checks for directly registered services
+  try {
+    const { scheduleHealthChecks } = await import('./actuator/health-check');
+    scheduleHealthChecks(config.healthCheck?.intervalMs || 30000);
+  } catch (error) {
+    console.error('Failed to set up health checks:', error);
+  }
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route

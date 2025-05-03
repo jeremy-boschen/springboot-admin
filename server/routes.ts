@@ -6,12 +6,67 @@ import { scheduleServiceDiscovery } from "./k8s/service-discovery";
 import { scheduleMetricsCollection, collectServiceMetrics, collectServiceLogs } from "./actuator/metrics";
 import { k8sClient } from "./k8s/client";
 import { createActuatorClient } from "./actuator/client";
-import { insertConfigPropertySchema } from "@shared/schema";
+import { insertConfigPropertySchema, serviceRegistrationSchema, ServiceRegistration } from "@shared/schema";
+import { z } from 'zod';
+import { checkActuatorHealth } from "./actuator/health-check";
+import axios from "axios";
 import config from "./config";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
   const apiRouter = app.route('/api');
+  
+  // 0. Service registration endpoint
+  app.post('/api/register', async (req: Request, res: Response) => {
+    try {
+      console.log('Received registration request:', req.body);
+      
+      // Validate request body against schema
+      const result = serviceRegistrationSchema.safeParse(req.body);
+      if (!result.success) {
+        const errorMessage = result.error.format();
+        return res.status(400).json({ 
+          error: 'Invalid registration data', 
+          details: errorMessage 
+        });
+      }
+      
+      // Extract validated data
+      const registrationData: ServiceRegistration = result.data;
+      
+      // Check if the actuator URL is reachable
+      try {
+        const healthEndpoint = registrationData.actuatorBaseUrl + 
+          (registrationData.healthCheckPath || '/actuator/health');
+        
+        await axios.get(healthEndpoint, { timeout: 5000 });
+      } catch (error) {
+        console.error('Error connecting to service at registration:', error);
+        // Continue with registration, but log the issue
+      }
+      
+      // Register the service
+      const service = await storage.registerService(registrationData);
+      
+      // Perform initial health check
+      const status = await checkActuatorHealth(service);
+      await storage.updateServiceStatus(service.id, status);
+      await storage.updateServiceLastSeen(service.id);
+      
+      // Return the registered service
+      res.status(201).json({
+        id: service.id,
+        name: service.name,
+        status,
+        registrationSource: service.registrationSource,
+        appId: service.appId
+      });
+      
+    } catch (error) {
+      console.error('Error registering service:', error);
+      res.status(500).json({ error: 'Failed to register service' });
+    }
+  });
   
   // 1. Services endpoints
   
