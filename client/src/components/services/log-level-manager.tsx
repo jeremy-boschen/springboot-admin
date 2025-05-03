@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { getLogLevelColor } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface LogLevelManagerProps {
   serviceId: number | string;
@@ -26,8 +27,6 @@ export function LogLevelManager({ serviceId }: LogLevelManagerProps) {
   const {
     loggersList,
     logLevels,
-    selectedLogger,
-    setSelectedLogger,
     setLogLevel,
     isLoadingLoggers,
     isSettingLogLevel,
@@ -41,21 +40,17 @@ export function LogLevelManager({ serviceId }: LogLevelManagerProps) {
     loggersError
   });
   
-  const [logLevelToSet, setLogLevelToSet] = React.useState('');
-
-  // Handle when a logger is selected
-  const handleLoggerSelect = (name: string) => {
-    setSelectedLogger(name);
-    
-    // Find the current level of the selected logger
-    const logger = loggersList.find(l => l.name === name);
-    setLogLevelToSet(logger?.configuredLevel || logger?.effectiveLevel || 'INFO');
-  };
-
   // Handle log level change
-  const handleSetLogLevel = () => {
-    if (selectedLogger && logLevelToSet) {
-      setLogLevel({ logger: selectedLogger, level: logLevelToSet });
+  const handleSetLogLevel = (loggerName: string, newLevel: string) => {
+    // Get the logger
+    const logger = loggersList.find(l => l.name === loggerName);
+    
+    // Only update if the level is different
+    if (logger && logger.configuredLevel !== newLevel) {
+      setLogLevel({ 
+        logger: loggerName, 
+        level: newLevel 
+      });
     }
   };
 
@@ -105,7 +100,7 @@ export function LogLevelManager({ serviceId }: LogLevelManagerProps) {
           <>
             <div className="mb-4">
               <p className="text-sm text-muted-foreground mb-2">
-                Manage logger levels to control verbosity of log outputs.
+                Click on a logger level to change it.
               </p>
               
               <div className="border border-border rounded-md mb-4">
@@ -120,11 +115,7 @@ export function LogLevelManager({ serviceId }: LogLevelManagerProps) {
                   <TableBody>
                     {loggersList.length > 0 ? (
                       loggersList.map((logger) => (
-                        <TableRow 
-                          key={logger.name}
-                          className={`cursor-pointer ${selectedLogger === logger.name ? 'bg-muted/50' : ''}`}
-                          onClick={() => handleLoggerSelect(logger.name)}
-                        >
+                        <TableRow key={logger.name}>
                           <TableCell className="font-mono text-xs">
                             {logger.name === 'ROOT' ? (
                               <span className="font-bold">ROOT</span>
@@ -133,13 +124,43 @@ export function LogLevelManager({ serviceId }: LogLevelManagerProps) {
                             )}
                           </TableCell>
                           <TableCell>
-                            {logger.configuredLevel ? (
-                              <Badge variant="outline" className={getLogLevelColor(logger.configuredLevel)}>
-                                {logger.configuredLevel}
-                              </Badge>
-                            ) : (
-                              <span className="text-muted-foreground text-xs">Not configured</span>
-                            )}
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="inline-block">
+                                    <Select
+                                      value={logger.configuredLevel || logger.effectiveLevel}
+                                      onValueChange={(newLevel) => handleSetLogLevel(logger.name, newLevel)}
+                                      disabled={isSettingLogLevel}
+                                    >
+                                      <SelectTrigger className="h-7 px-2 py-0 border-none bg-transparent hover:bg-muted">
+                                        <SelectValue placeholder="Select level">
+                                          {logger.configuredLevel ? (
+                                            <Badge variant="outline" className={getLogLevelColor(logger.configuredLevel)}>
+                                              {logger.configuredLevel}
+                                            </Badge>
+                                          ) : (
+                                            <span className="text-muted-foreground text-xs">Not configured</span>
+                                          )}
+                                        </SelectValue>
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {logLevels.map((level: string) => (
+                                          <SelectItem key={level} value={level}>
+                                            <Badge variant="outline" className={getLogLevelColor(level || 'INFO')}>
+                                              {level}
+                                            </Badge>
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Click to change level</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className={getLogLevelColor(logger.effectiveLevel)}>
@@ -159,48 +180,10 @@ export function LogLevelManager({ serviceId }: LogLevelManagerProps) {
                 </Table>
               </div>
               
-              {selectedLogger && (
-                <div className="p-4 border border-border rounded-md bg-background">
-                  <h4 className="font-medium mb-2">Change Log Level</h4>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Selected Logger: <code className="bg-muted px-1 py-0.5 rounded">{selectedLogger}</code>
-                  </p>
-                  
-                  <div className="flex items-center gap-3">
-                    <Select
-                      value={logLevelToSet}
-                      onValueChange={setLogLevelToSet}
-                      disabled={isSettingLogLevel}
-                    >
-                      <SelectTrigger className="w-40">
-                        <SelectValue placeholder="Select level" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {logLevels.map((level: string) => (
-                          <SelectItem key={level} value={level}>
-                            <Badge variant="outline" className={getLogLevelColor(level || 'INFO')}>
-                              {level}
-                            </Badge>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    
-                    <Button 
-                      onClick={handleSetLogLevel} 
-                      disabled={isSettingLogLevel || !logLevelToSet}
-                    >
-                      {isSettingLogLevel ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Applying
-                        </>
-                      ) : (
-                        <>
-                          <Check className="mr-2 h-4 w-4" /> Apply
-                        </>
-                      )}
-                    </Button>
-                  </div>
+              {isSettingLogLevel && (
+                <div className="flex items-center justify-center py-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" /> 
+                  Updating log level...
                 </div>
               )}
             </div>
