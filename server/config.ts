@@ -37,6 +37,11 @@ const ConfigSchema = z.object({
   logging: z.object({
     level: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   }),
+  logs: z.object({
+    recentLimit: z.number().default(10),
+    websocketEnabled: z.boolean().default(true),
+    refreshInterval: z.number().default(5000),
+  }),
 });
 
 // Configuration type
@@ -73,6 +78,11 @@ const defaultConfig: AppConfig = {
   },
   logging: {
     level: 'info',
+  },
+  logs: {
+    recentLimit: 10,
+    websocketEnabled: true,
+    refreshInterval: 5000,
   },
 };
 

@@ -1,11 +1,13 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { scheduleServiceDiscovery } from "./k8s/service-discovery";
 import { scheduleMetricsCollection, collectServiceMetrics } from "./actuator/metrics";
 import { k8sClient } from "./k8s/client";
 import { createActuatorClient } from "./actuator/client";
 import { insertConfigPropertySchema } from "@shared/schema";
+import config from "./config";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
@@ -146,7 +148,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Service not found' });
       }
       
-      const logs = await storage.getLogsForService(serviceId, 100);
+      // Get the limit from config or query param
+      const limitParam = req.query.limit ? parseInt(req.query.limit as string) : null;
+      const configLimit = config.logs.recentLimit;
+      const limit = limitParam || configLimit || 100;
+      
+      const logs = await storage.getLogsForService(serviceId, limit);
       
       // Ensure that all log entries have valid timestamps
       const sanitizedLogs = logs.map(log => {
@@ -385,5 +392,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
   scheduleMetricsCollection(30000); // Collect metrics every 30 seconds
   
   const httpServer = createServer(app);
+  
+  // Setup WebSocket server for real-time logs if enabled
+  if (config.logs.websocketEnabled) {
+    const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+    
+    // Track connected clients and their subscribed service IDs
+    const clients = new Map<WebSocket, Set<number>>();
+    
+    wss.on('connection', (ws) => {
+      // Initialize empty set for this client's subscriptions
+      clients.set(ws, new Set());
+      
+      console.log('WebSocket client connected');
+      
+      // Handle subscription messages
+      ws.on('message', (message) => {
+        try {
+          const data = JSON.parse(message.toString());
+          
+          if (data.type === 'subscribe' && data.serviceId) {
+            const serviceId = parseInt(data.serviceId);
+            const clientSubscriptions = clients.get(ws);
+            
+            if (clientSubscriptions) {
+              clientSubscriptions.add(serviceId);
+              console.log(`WebSocket client subscribed to service ${serviceId}`);
+            }
+          } else if (data.type === 'unsubscribe' && data.serviceId) {
+            const serviceId = parseInt(data.serviceId);
+            const clientSubscriptions = clients.get(ws);
+            
+            if (clientSubscriptions) {
+              clientSubscriptions.delete(serviceId);
+              console.log(`WebSocket client unsubscribed from service ${serviceId}`);
+            }
+          }
+        } catch (error) {
+          console.error('Error processing WebSocket message:', error);
+        }
+      });
+      
+      // Handle disconnections
+      ws.on('close', () => {
+        clients.delete(ws);
+        console.log('WebSocket client disconnected');
+      });
+    });
+    
+    // Create a function to broadcast logs to subscribed clients
+    const broadcastLogs = (serviceId: number, logs: any[]) => {
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          const subscriptions = clients.get(client);
+          if (subscriptions && subscriptions.has(serviceId)) {
+            client.send(JSON.stringify({
+              type: 'logs',
+              serviceId,
+              logs
+            }));
+          }
+        }
+      });
+    };
+    
+    // Hook this into the metrics collection process
+    const originalCollectServiceLogs = collectServiceMetrics;
+    // This is just a placeholder - in a real implementation we would modify or extend
+    // the collectServiceLogs function to call broadcastLogs when new logs are available
+  }
+  
   return httpServer;
 }
