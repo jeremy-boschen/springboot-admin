@@ -388,31 +388,66 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
         <Card>
           <CardHeader className="px-6 py-5">
             <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <CardTitle className="text-lg leading-6 font-medium">Recent Logs</CardTitle>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="ml-2 h-8 w-8 p-0">
-                    {logsOpen ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    )}
-                  </Button>
-                </CollapsibleTrigger>
+              <div>
+                <div className="flex items-center">
+                  <CardTitle className="text-lg leading-6 font-medium">Recent Logs</CardTitle>
+                  {realtimeLogs && isConnected && (
+                    <Badge variant="default" className="ml-2 animate-pulse">
+                      Live
+                    </Badge>
+                  )}
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="ml-2 h-8 w-8 p-0">
+                      {logsOpen ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+                <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+                  Last log entries from the service.
+                  {realtimeLogs && <span className="ml-1">Live streaming enabled.</span>}
+                </p>
               </div>
+
               <div className="flex space-x-2">
+                <Button 
+                  size="sm"
+                  variant={realtimeLogs ? "default" : "outline"}
+                  className="inline-flex items-center"
+                  onClick={() => {
+                    setRealtimeLogs(!realtimeLogs);
+                    if (!realtimeLogs) {
+                      clearLogs();
+                    }
+                  }}
+                >
+                  {realtimeLogs ? (
+                    <>
+                      <WifiOff className="h-4 w-4 mr-1" />
+                      Stop Streaming
+                    </>
+                  ) : (
+                    <>
+                      <Wifi className="h-4 w-4 mr-1" />
+                      Stream Logs
+                    </>
+                  )}
+                </Button>
+                
                 <Button 
                   size="sm"
                   variant="outline"
                   className="inline-flex items-center border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                  onClick={() => setShowFullscreenLogs(true)}
                 >
-                  Download Logs
+                  <Maximize2 className="h-4 w-4 mr-1" />
+                  Full Screen
                 </Button>
               </div>
             </div>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-              Last log entries from the service.
-            </p>
           </CardHeader>
 
           <CollapsibleContent>
@@ -461,7 +496,7 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
             
             <CardContent className="p-0 border-t border-gray-200 dark:border-gray-700">
               <div className="overflow-x-auto">
-                <LogTable logs={filteredLogs} />
+                <LogTable logs={realtimeLogs ? wsLogs : filteredLogs} loading={realtimeLogs && wsLogs.length === 0} />
               </div>
               
               <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
@@ -489,6 +524,24 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
           </CollapsibleContent>
         </Card>
       </Collapsible>
+
+      {/* Fullscreen Logs Modal */}
+      {showFullscreenLogs && (
+        <FullscreenLogs
+          logs={realtimeLogs ? wsLogs : filteredLogs}
+          serviceName={service.name}
+          onClose={() => setShowFullscreenLogs(false)}
+          isRealtime={realtimeLogs}
+          onToggleRealtime={() => {
+            setRealtimeLogs(!realtimeLogs);
+            if (!realtimeLogs) {
+              clearLogs();
+            }
+          }}
+          onClearLogs={clearLogs}
+          realtimeStatus={isConnected ? 'connected' : wsError ? 'error' : 'disconnected'}
+        />
+      )}
     </div>
   );
 }

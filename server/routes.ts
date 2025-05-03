@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { scheduleServiceDiscovery } from "./k8s/service-discovery";
-import { scheduleMetricsCollection, collectServiceMetrics } from "./actuator/metrics";
+import { scheduleMetricsCollection, collectServiceMetrics, collectServiceLogs } from "./actuator/metrics";
 import { k8sClient } from "./k8s/client";
 import { createActuatorClient } from "./actuator/client";
 import { insertConfigPropertySchema } from "@shared/schema";
@@ -456,10 +456,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     };
     
-    // Hook this into the metrics collection process
-    const originalCollectServiceLogs = collectServiceMetrics;
-    // This is just a placeholder - in a real implementation we would modify or extend
-    // the collectServiceLogs function to call broadcastLogs when new logs are available
+    // Hook this into the log collection process
+    // This is a monkey patch to broadcast logs whenever new ones are collected
+    const originalCollectServiceLogs = collectServiceLogs;
+    
+    // Override the collectServiceLogs function to also broadcast logs via WebSocket
+    (global as any).collectServiceLogs = async (serviceId: number, actuatorUrl: string) => {
+      // Call the original function to collect logs
+      const logs = await originalCollectServiceLogs(serviceId, actuatorUrl);
+      
+      // If we received logs, broadcast them to subscribed clients
+      if (logs && logs.length > 0) {
+        broadcastLogs(serviceId, logs);
+      }
+      
+      return logs;
+    }
   }
   
   return httpServer;
