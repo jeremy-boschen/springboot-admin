@@ -291,6 +291,44 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
         </Card>
       </Collapsible>
 
+      {/* Configuration Management Section - Collapsible */}
+      <Collapsible open={configOpen} onOpenChange={setConfigOpen} className="w-full">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center">
+              <CardTitle className="text-lg">Configuration Management</CardTitle>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="ml-2 h-8 w-8 p-0">
+                  {configOpen ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Manage configuration properties for this service
+            </p>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent>
+              {/* Check if we have a valid service ID */}
+              {typeof service.id === 'number' ? (
+                <ConfigManager serviceId={service.id} />
+              ) : (
+                <div className="py-4">
+                  <div className="animate-pulse flex justify-center">
+                    <div className="h-4 w-28 bg-gray-300 dark:bg-gray-700 rounded"></div>
+                  </div>
+                  <p className="text-sm text-center text-muted-foreground mt-2">Loading configuration data...</p>
+                </div>
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+      
       {/* Log Level Management Section - Collapsible */}
       <Collapsible open={logLevelOpen} onOpenChange={setLogLevelOpen} className="w-full">
         <Card>

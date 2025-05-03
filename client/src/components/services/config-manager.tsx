@@ -3,8 +3,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { insertConfigPropertySchema, PropertyTypeEnum } from "@shared/schema";
-import { useServiceConfig } from "@hooks/use-service-config";
-import { Button } from "@components/ui/button";
+import { useServiceConfig } from "@/hooks/use-service-config";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@components/ui/dialog";
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -22,9 +22,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@components/ui/form";
-import { Input } from "@components/ui/input";
-import { Textarea } from "@components/ui/textarea";
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -33,27 +33,27 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@components/ui/table";
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@components/ui/select";
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@components/ui/card";
-import { Switch } from "@components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
-import { Badge } from "@components/ui/badge";
-import { ScrollArea } from "@components/ui/scroll-area";
+} from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertCircle, Edit, Plus, Trash } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Extend the config property schema for the form with additional validation
 const configPropertyFormSchema = insertConfigPropertySchema

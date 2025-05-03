@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ConfigProperty, InsertConfigProperty } from "@shared/schema";
-import { apiRequest, getQueryFn } from "@lib/queryClient";
-import { toast } from "@hooks/use-toast";
+import { apiRequest, getQueryFn } from "@/lib/queryClient";
+import { toast } from "@/hooks/use-toast";
 
 /**
  * Hook to manage configuration properties for a service
