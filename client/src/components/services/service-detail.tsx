@@ -289,83 +289,150 @@ export function ServiceDetail({ service, onBack, refreshService }: ServiceDetail
         </Card>
       </Collapsible>
 
-      {/* Log Level Management Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Log Level Management</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Configure logging levels for this service
-          </p>
-        </CardHeader>
-        <CardContent>
-          {/* Check if we have a valid service ID */}
-          {typeof service.id === 'number' ? (
-            <LogLevelManager serviceId={service.id} />
-          ) : (
-            <div className="py-4">
-              <div className="animate-pulse flex justify-center">
-                <div className="h-4 w-28 bg-gray-300 dark:bg-gray-700 rounded"></div>
-              </div>
-              <p className="text-sm text-center text-muted-foreground mt-2">Loading logger data...</p>
+      {/* Log Level Management Section - Collapsible */}
+      <Collapsible open={logLevelOpen} onOpenChange={setLogLevelOpen} className="w-full">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center">
+              <CardTitle className="text-lg">Log Level Management</CardTitle>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="ml-2 h-8 w-8 p-0">
+                  {logLevelOpen ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <p className="text-sm text-muted-foreground">
+              Configure logging levels for this service
+            </p>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent>
+              {/* Check if we have a valid service ID */}
+              {typeof service.id === 'number' ? (
+                <LogLevelManager serviceId={service.id} />
+              ) : (
+                <div className="py-4">
+                  <div className="animate-pulse flex justify-center">
+                    <div className="h-4 w-28 bg-gray-300 dark:bg-gray-700 rounded"></div>
+                  </div>
+                  <p className="text-sm text-center text-muted-foreground mt-2">Loading logger data...</p>
+                </div>
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
-      {/* Logs Section */}
-      <Card>
-        <CardHeader className="px-6 py-5 flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-lg leading-6 font-medium">Recent Logs</CardTitle>
+      {/* Logs Section - Collapsible */}
+      <Collapsible open={logsOpen} onOpenChange={setLogsOpen} className="w-full">
+        <Card>
+          <CardHeader className="px-6 py-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <CardTitle className="text-lg leading-6 font-medium">Recent Logs</CardTitle>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="ml-2 h-8 w-8 p-0">
+                    {logsOpen ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+              <div className="flex space-x-2">
+                <Button 
+                  size="sm"
+                  variant="outline"
+                  className="inline-flex items-center border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                >
+                  Download Logs
+                </Button>
+              </div>
+            </div>
             <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
               Last log entries from the service.
             </p>
-          </div>
-          <div className="flex space-x-2">
-            <Select 
-              defaultValue="ALL" 
-              onValueChange={setLogLevel}
-            >
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder="All Levels" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Levels</SelectItem>
-                <SelectItem value="ERROR">ERROR</SelectItem>
-                <SelectItem value="WARNING">WARNING</SelectItem>
-                <SelectItem value="INFO">INFO</SelectItem>
-                <SelectItem value="DEBUG">DEBUG</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button 
-              size="sm"
-              variant="outline"
-              className="inline-flex items-center border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-            >
-              Download Logs
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0 border-t border-gray-200 dark:border-gray-700">
-          <div className="overflow-x-auto">
-            <LogTable logs={filteredLogs} />
-          </div>
-          <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <Button variant="outline" size="sm" disabled>Previous</Button>
-              <Button variant="outline" size="sm" disabled>Next</Button>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700 dark:text-gray-300">
-                  Showing <span className="font-medium">1</span> to <span className="font-medium">{filteredLogs.length}</span> of <span className="font-medium">{filteredLogs.length}</span> results
-                </p>
+          </CardHeader>
+
+          <CollapsibleContent>
+            {/* Search and Filter Controls */}
+            <div className="px-6 mb-4 flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-grow">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search logs..."
+                  className="pl-9 w-full"
+                  value={logSearch}
+                  onChange={(e) => setLogSearch(e.target.value)}
+                />
+                {logSearch && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-9 w-9"
+                    onClick={() => setLogSearch('')}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
-              {/* Pagination would go here */}
+              <div className="flex-shrink-0">
+                <Select 
+                  value={logLevel}
+                  onValueChange={setLogLevel}
+                >
+                  <SelectTrigger className="w-[130px]">
+                    <Filter className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="All Levels" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Levels</SelectItem>
+                    <SelectItem value="ERROR">ERROR</SelectItem>
+                    <SelectItem value="WARNING">WARNING</SelectItem>
+                    <SelectItem value="INFO">INFO</SelectItem>
+                    <SelectItem value="DEBUG">DEBUG</SelectItem>
+                    <SelectItem value="TRACE">TRACE</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+            
+            <CardContent className="p-0 border-t border-gray-200 dark:border-gray-700">
+              <div className="overflow-x-auto">
+                <LogTable logs={filteredLogs} />
+              </div>
+              
+              <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
+                <div className="flex-1 flex justify-between sm:hidden">
+                  <Button variant="outline" size="sm" disabled>Previous</Button>
+                  <Button variant="outline" size="sm" disabled>Next</Button>
+                </div>
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      {filteredLogs.length > 0 ? (
+                        <>
+                          Showing <span className="font-medium">1</span> to <span className="font-medium">{filteredLogs.length}</span> of <span className="font-medium">{filteredLogs.length}</span> logs
+                        </>
+                      ) : (
+                        logSearch ? 
+                          <span>No logs matching your search criteria</span> : 
+                          <span>No logs available</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
     </div>
   );
 }
