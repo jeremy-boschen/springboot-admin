@@ -39,7 +39,7 @@ WORKDIR /app
 RUN addgroup -S app && adduser -S app -G app
 
 # Add configuration
-COPY config.yaml /app/config.yaml
+COPY --chown=app:app config.yaml /app/config.yaml
 
 # Copy production node_modules, compiled app, and manifest
 COPY --from=builder --chown=app:app /app/dist ./dist

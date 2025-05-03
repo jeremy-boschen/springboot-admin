@@ -16,7 +16,7 @@ spec:
       containers:
         - name: dashboard
           image: k8s-springboot-dashboard
-          args: ["node", "--inspect-brk=0.0.0.0:9229", "dist/server.js"]
+          args: ["node", "--enable-source-maps", "--inspect-brk=0.0.0.0:9229", "dist/server.js"]
           ports:
             - containerPort: 3000
             - containerPort: 9229

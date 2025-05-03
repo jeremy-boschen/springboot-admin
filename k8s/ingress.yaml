@@ -11,10 +11,10 @@ metadata:
 spec:
   ingressClassName: "nginx"
   rules:
-  - host: dashboard.example.com  # Replace with your domain
+  - host:  microservices.info  # Replace with your domain
     http:
       paths:
-      - path: /
+      - path: /admin
         pathType: Prefix
         backend:
           service:

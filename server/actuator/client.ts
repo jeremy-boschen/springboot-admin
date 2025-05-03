@@ -186,27 +186,33 @@ export class ActuatorClient {
       console.log(`Fetching health from: ${url}`);
       
       const response = await axios.get(url, {
-        timeout: 3000,
-        validateStatus: () => true // Accept any status to handle DOWN states
+        timeout: 3000
       });
 
-      // Only consider 2xx status codes as successful
-      if (response.status >= 200 && response.status < 300) {
-        return response.data;
-      }
-
-      // All other status codes (including redirects) are treated as DOWN
-      return {
-        status: 'DOWN',
-        error: response.data?.error || response.data?.message || `Unexpected HTTP status: ${response.status}`,
-        details: {
-          statusCode: response.status,
-          response: response.data
-        }
-      };
+      return response.data;
     } catch (error) {
       console.error('Error fetching health data:', error);
-      return { status: 'DOWN', error: 'Connection failed' };
+
+      // Type guard for axios error
+      if (axios.isAxiosError(error) && error.response) {
+        return {
+          status: 'DOWN',
+          error: error.message || `Unexpected HTTP status: ${error.response.status}`,
+          details: {
+            statusCode: error.response.status,
+            response: error.response.data
+          }
+        };
+      }
+
+      return {
+        status: 'DOWN',
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        details: {
+          statusCode: 500,
+          response: null
+        }
+      };
     }
   }
 
@@ -339,7 +345,7 @@ export class ActuatorClient {
       }
       
       // If logfile not available, try using loggers endpoint
-      const loggersUrl = `${this.baseUrl}${this.actuatorBasePath}/loggers`;
+      const loggersUrl = `${this.baseUrl}/loggers`;
       const loggersResponse = await axios.get(loggersUrl, { timeout: 2000 });
       
       return {
@@ -389,7 +395,7 @@ export class ActuatorClient {
     }
     
     try {
-      const loggersUrl = `${this.baseUrl}${this.actuatorBasePath}/loggers`;
+      const loggersUrl = `${this.baseUrl}/loggers`;
       console.log(`Fetching loggers from: ${loggersUrl}`);
       
       const response = await axios.get(loggersUrl, { timeout: 3000 });
@@ -421,7 +427,7 @@ export class ActuatorClient {
     }
     
     try {
-      const loggerUrl = `${this.baseUrl}${this.actuatorBasePath}/loggers/${loggerName}`;
+      const loggerUrl = `${this.baseUrl}/loggers/${loggerName}`;
       console.log(`Setting log level for ${loggerName} to ${level} on ${loggerUrl}`);
       
       await axios.post(loggerUrl, { configuredLevel: level }, { 
