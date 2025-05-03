@@ -35,14 +35,15 @@ RUN npm ci --only=production
 # Add configuration
 COPY config.yaml /app/config.yaml
 
-# Create dist directory structure expected by server/vite.ts
-RUN mkdir -p /app/dist/public
+# Create a simpler structure for production
+# Our production.ts file looks for static files in /app/public
+RUN mkdir -p /app/public
 
 # Copy server file (built with esbuild)
 COPY --from=builder /app/dist/server.js ./dist/server.js
 
-# Copy static files for the client (built with Vite) to match expected path
-COPY --from=builder /app/dist/public ./dist/public
+# Copy static files for the client (built with Vite) to the directory our production server expects
+COPY --from=builder /app/dist/public/* ./public/
 
 # Set environment variables
 ENV NODE_ENV=production
