@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { scheduleServiceDiscovery } from "./k8s/service-discovery";
 import { scheduleMetricsCollection, collectServiceMetrics } from "./actuator/metrics";
 import { k8sClient } from "./k8s/client";
+import { createActuatorClient } from "./actuator/client";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
@@ -198,6 +199,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching namespaces:', error);
       res.status(500).json({ error: 'Failed to fetch namespaces' });
+    }
+  });
+  
+  // 3. Logger management endpoints
+  
+  // Get available loggers and their levels
+  app.get('/api/services/:id/loggers', async (req: Request, res: Response) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      const service = await storage.getService(serviceId);
+      
+      if (!service) {
+        return res.status(404).json({ error: 'Service not found' });
+      }
+      
+      const actuatorClient = createActuatorClient(service.actuatorUrl);
+      const loggers = await actuatorClient.getLoggers();
+      
+      res.json(loggers);
+    } catch (error) {
+      console.error('Error fetching loggers:', error);
+      res.status(500).json({ error: 'Failed to fetch loggers' });
+    }
+  });
+  
+  // Set logger level
+  app.post('/api/services/:id/loggers/:logger', async (req: Request, res: Response) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      const loggerName = req.params.logger;
+      const level = req.body.level;
+      
+      if (!level || typeof level !== 'string') {
+        return res.status(400).json({ error: 'Invalid log level' });
+      }
+      
+      const service = await storage.getService(serviceId);
+      
+      if (!service) {
+        return res.status(404).json({ error: 'Service not found' });
+      }
+      
+      const actuatorClient = createActuatorClient(service.actuatorUrl);
+      const success = await actuatorClient.setLogLevel(loggerName, level);
+      
+      if (success) {
+        res.json({ message: `Log level for ${loggerName} set to ${level}` });
+      } else {
+        res.status(500).json({ error: 'Failed to set log level' });
+      }
+    } catch (error) {
+      console.error('Error setting log level:', error);
+      res.status(500).json({ error: 'Failed to set log level' });
     }
   });
   

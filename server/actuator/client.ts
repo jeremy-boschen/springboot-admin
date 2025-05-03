@@ -241,6 +241,68 @@ export class ActuatorClient {
       return [];
     }
   }
+
+  // Get available loggers and their levels
+  async getLoggers() {
+    if (this.useMockData) {
+      console.log(`[MOCK] Getting loggers for ${this.baseUrl}`);
+      return {
+        levels: ["OFF", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"],
+        loggers: {
+          "ROOT": {
+            configuredLevel: "INFO",
+            effectiveLevel: "INFO"
+          },
+          "com.example": {
+            configuredLevel: "INFO",
+            effectiveLevel: "INFO"
+          },
+          "org.springframework": {
+            configuredLevel: null,
+            effectiveLevel: "INFO"
+          },
+          "org.springframework.web": {
+            configuredLevel: null,
+            effectiveLevel: "INFO"
+          }
+        }
+      };
+    }
+    
+    try {
+      const loggersUrl = `${this.baseUrl}${this.actuatorBasePath}/loggers`;
+      console.log(`Fetching loggers from: ${loggersUrl}`);
+      
+      const response = await axios.get(loggersUrl, { timeout: 3000 });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching loggers:', error);
+      return { levels: [], loggers: {} };
+    }
+  }
+  
+  // Set the log level for a specific logger
+  async setLogLevel(loggerName: string, level: string) {
+    if (this.useMockData) {
+      console.log(`[MOCK] Setting log level for ${loggerName} to ${level} on ${this.baseUrl}`);
+      return true;
+    }
+    
+    try {
+      const loggerUrl = `${this.baseUrl}${this.actuatorBasePath}/loggers/${loggerName}`;
+      console.log(`Setting log level for ${loggerName} to ${level} on ${loggerUrl}`);
+      
+      await axios.post(loggerUrl, { configuredLevel: level }, { 
+        timeout: 3000,
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      return true;
+    } catch (error) {
+      console.error(`Error setting log level for ${loggerName}:`, error);
+      return false;
+    }
+  }
 }
 
 // Create a new actuator client
