@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build:app": "npm --prefix spring-boot-monitor-app run build",
-    "start:app": "npm --prefix spring-boot-monitor-app run start"
+    "build:app": "npm --prefix obserra-dashboard run build",
+    "start:app": "npm --prefix obserra-dashboard run start"
   }
 }

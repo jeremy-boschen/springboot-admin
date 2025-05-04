@@ -1,59 +1,62 @@
-# Spring Boot Monitoring System
+# Obserra – Spring Boot Monitoring System
 
-A comprehensive monitoring solution for Spring Boot applications, designed to simplify complex service management and provide actionable insights for development and operations teams.
+Obserra is a comprehensive monitoring solution for Spring Boot applications, designed to simplify service management and provide actionable insights for development and operations teams.
 
 ## Project Structure
 
 This repository contains two main components:
 
-1. **[spring-boot-monitor-app](./spring-boot-monitor-app)**: The Node.js/React dashboard application
-   - Centralized monitoring dashboard for visualizing services
+1. **[obserra-dashboard](./obserra-dashboard)**: The Node.js/React dashboard application
+   - Centralized UI for visualizing service health and activity
    - Real-time metrics and log streaming
-   - REST API for service registration
+   - REST API for manual service registration
    - WebSocket support for live updates
 
-2. **[spring-boot-monitor-client](./spring-boot-monitor-client)**: The Spring Boot client library
+2. **[obserra-spring-boot-starter](./obserra-spring-boot-starter)**: The Spring Boot client library
    - Auto-registration with the dashboard
    - Spring Boot Actuator integration
-   - Zero-configuration for simple setup
-   - Custom metrics support
+   - Zero-configuration setup via Spring Boot autoconfig
+   - Custom metrics and health endpoints support
 
 ## Key Features
 
-- **Comprehensive Dashboard**: Visualize all of your Spring Boot services in a centralized, intuitive dashboard
-- **Real-time Monitoring**: Track service health, metrics, and logs in real-time
-- **Automatic Service Discovery**: Services auto-register with the dashboard for zero-configuration monitoring
-- **Performance Metrics**: View memory usage, CPU utilization, and other key performance indicators
-- **Log Streaming**: Stream logs in real-time from your applications directly to the dashboard
-- **Configuration Management**: View and modify application configuration properties
-- **Dark Mode Support**: Built-in dark mode for reduced eye strain during night shifts
+- **Unified Dashboard**: View all your Spring Boot services in one place
+- **Real-time Monitoring**: Live metrics, logs, and health data
+- **Flexible Service Discovery**: Supports both manual registration and Kubernetes-based discovery
+- **Performance Metrics**: Monitor JVM metrics, memory, CPU, and more
+- **Log Streaming**: Stream logs to the dashboard over WebSockets
+- **Configuration Visibility**: Inspect active configuration values in each service
+- **Dark Mode Support**: Modern UI with built-in dark mode
 
 ## Getting Started
 
 ### Dashboard Application
 
-Follow the instructions in the [spring-boot-monitor-app README](./spring-boot-monitor-app/README.md) to set up and run the dashboard application.
+Refer to the [obserra-dashboard README](./obserra-dashboard/README.md) for setup and run instructions.
 
 ### Client Library
 
-Follow the instructions in the [spring-boot-monitor-client README](./spring-boot-monitor-client/README.md) to integrate the client library with your Spring Boot applications.
+Refer to the [obserra-spring-boot-starter README](./obserra-spring-boot-starter/README.md) for integration details.
+
+### Debugging
+
+For running all components together for debugging purposes, refer to the [Debugging Guide](./DEBUG.md). 
+We provide scripts for both Windows (`debug.bat`) and Linux/macOS (`debug.sh`) to simplify the debugging process.
 
 ## Architecture
 
-The monitoring solution follows a simplified architecture:
+Obserra follows a modular architecture:
 
-1. **Dashboard Application**: A Node.js/React application serving as the centralized monitoring dashboard and registration endpoint.
-2. **Client Library**: A Spring Boot auto-configuration JAR that applications include to register themselves with the dashboard.
-3. **Service Registration**: Spring Boot applications automatically register with the dashboard on startup.
-4. **Health Checks**: The dashboard periodically checks service health and collects metrics.
-5. **Log Streaming**: Real-time log streaming using WebSockets for instant feedback.
+1. **Dashboard Application**: Node.js/React frontend and API layer for observability and control
+2. **Client Library**: Spring Boot autoconfig JAR for seamless integration with any service
+3. **Service Registration**: Clients register themselves with the dashboard on startup
+4. **Health Checks**: Dashboard polls health endpoints or reacts to status changes
+5. **Log Streaming**: Real-time logs via WebSocket push
 
 ## Deployment
 
-Both components can be deployed independently:
-
-- The dashboard application can be containerized and deployed to Kubernetes, Docker, or any cloud provider.
-- The client library is a standard Java library distributed via Maven or Gradle and included in Spring Boot applications.
+- The dashboard can be deployed via Docker, Kubernetes, or any cloud runtime
+- The client library is distributed via Maven/Gradle and imported in any Spring Boot project
 
 ## License
 

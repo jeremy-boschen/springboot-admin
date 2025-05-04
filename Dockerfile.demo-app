@@ -1,0 +1,21 @@
+# Use a Java 17 base image
+FROM eclipse-temurin:17-jdk
+
+# Set working directory
+WORKDIR /app
+
+# Copy the Gradle wrapper files
+COPY gradlew .
+COPY gradle gradle
+
+# Copy the build files
+COPY settings.gradle.kts .
+COPY build.gradle.kts .
+COPY obserra-spring-boot-starter obserra-spring-boot-starter
+COPY obserra-samples/demo-app-gradle obserra-samples/demo-app-gradle
+
+# Build the application
+RUN ./gradlew :obserra-samples:demo-app-gradle:bootJar
+
+# Set the JAR file as the entrypoint
+ENTRYPOINT ["java", "-jar", "/app/obserra-samples/demo-app-gradle/build/libs/demo-app-gradle-0.0.1-SNAPSHOT.jar"]

@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # Dashboard component
+  obserra-dashboard:
+    build:
+      context: ./obserra-dashboard
+      dockerfile: Dockerfile
+    container_name: obserra-dashboard
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - CONFIG_PATH=/app/config.yaml
+      - KUBERNETES_IN_CLUSTER=false
+    volumes:
+      - ./config.yaml:/app/config.yaml
+    networks:
+      - obserra-network
+    restart: unless-stopped
+
+  # Sample Spring Boot application
+  demo-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.demo-app
+    container_name: obserra-demo-app
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - MONITOR_DASHBOARD_URL=http://obserra-dashboard:3000
+    depends_on:
+      - obserra-dashboard
+    networks:
+      - obserra-network
+    restart: unless-stopped
+
+networks:
+  obserra-network:
+    driver: bridge

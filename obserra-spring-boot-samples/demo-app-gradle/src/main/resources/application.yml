@@ -1,0 +1,34 @@
+# Application Configuration
+spring:
+  application:
+    name: demo-app
+
+server:
+  port: 8080
+
+# Spring Boot Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+
+# Application Info (used for dashboard)
+info:
+  app:
+    name: ${spring.application.name}
+    version: 1.0.0
+    description: Demo Application for Spring Boot Monitoring
+    contact:
+      email: admin@example.com
+
+# Boot Monitoring Dashboard Configuration
+monitor:
+  enabled: true
+  dashboard-url: http://localhost:3000
+  app-id: demo-app-${random.uuid}
+  heartbeat-interval-ms: 30000
