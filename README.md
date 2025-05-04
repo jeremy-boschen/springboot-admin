@@ -1,158 +1,60 @@
-# Spring Boot Monitoring Dashboard
+# Spring Boot Monitoring System
 
-A comprehensive Spring Boot monitoring platform designed to simplify application management and provide actionable insights for development and operations teams.
+A comprehensive monitoring solution for Spring Boot applications, designed to simplify complex service management and provide actionable insights for development and operations teams.
 
-## Architecture
+## Project Structure
 
-The system consists of two main components:
+This repository contains two main components:
 
-1. **Monitoring Dashboard** (Node.js/React)
-   - Central server with registration endpoints
-   - Real-time monitoring and visualization
-   - WebSocket-based log streaming
-   - Configuration management interface
-   - Light and dark theme support
+1. **[spring-boot-monitor-app](./spring-boot-monitor-app)**: The Node.js/React dashboard application
+   - Centralized monitoring dashboard for visualizing services
+   - Real-time metrics and log streaming
+   - REST API for service registration
+   - WebSocket support for live updates
 
-2. **Spring Boot Client** (Java)
-   - Auto-configuration JAR for Spring Boot applications
-   - Automatic service registration
-   - Metrics collection integration
-   - Zero configuration setup (with sensible defaults)
-   - Support for Spring Boot 2.7.x through 3.2.x
+2. **[spring-boot-monitor-client](./spring-boot-monitor-client)**: The Spring Boot client library
+   - Auto-registration with the dashboard
+   - Spring Boot Actuator integration
+   - Zero-configuration for simple setup
+   - Custom metrics support
 
-## Features
+## Key Features
 
-- **Service Health Monitoring**: Real-time health status of all Spring Boot applications
-- **Metrics Dashboard**: Memory, CPU, and error metrics with historical trends
-- **Log Streaming**: Real-time log streaming from applications to the dashboard
-- **Configuration Management**: View and update application properties
-- **Self-Registration**: Applications automatically register with the dashboard
-- **Responsive Design**: Works on desktop, tablet, and mobile devices
-- **Theme Support**: Light and dark theme options
+- **Comprehensive Dashboard**: Visualize all of your Spring Boot services in a centralized, intuitive dashboard
+- **Real-time Monitoring**: Track service health, metrics, and logs in real-time
+- **Automatic Service Discovery**: Services auto-register with the dashboard for zero-configuration monitoring
+- **Performance Metrics**: View memory usage, CPU utilization, and other key performance indicators
+- **Log Streaming**: Stream logs in real-time from your applications directly to the dashboard
+- **Configuration Management**: View and modify application configuration properties
+- **Dark Mode Support**: Built-in dark mode for reduced eye strain during night shifts
 
 ## Getting Started
 
-### Dashboard Setup
+### Dashboard Application
 
-1. Clone this repository
-2. Install dependencies:
-   ```
-   npm install
-   ```
-3. Start the dashboard:
-   ```
-   npm run dev
-   ```
-4. Access the dashboard at http://localhost:5000
+Follow the instructions in the [spring-boot-monitor-app README](./spring-boot-monitor-app/README.md) to set up and run the dashboard application.
 
-### Spring Boot Application Integration
+### Client Library
 
-1. Add the client dependency to your Spring Boot application:
-   ```xml
-   <dependency>
-     <groupId>com.example</groupId>
-     <artifactId>boot-monitoring-client</artifactId>
-     <version>1.0.0</version>
-   </dependency>
-   ```
+Follow the instructions in the [spring-boot-monitor-client README](./spring-boot-monitor-client/README.md) to integrate the client library with your Spring Boot applications.
 
-2. Add configuration to your `application.properties`:
-   ```properties
-   # Enable monitoring
-   monitor.enabled=true
-   
-   # Dashboard URL
-   monitor.dashboard-url=http://localhost:5000
-   
-   # Application ID (optional, will be generated if not provided)
-   monitor.app-id=my-application-id
-   ```
+## Architecture
 
-3. Ensure Spring Boot Actuator is properly configured:
-   ```properties
-   # Expose all actuator endpoints
-   management.endpoints.web.exposure.include=*
-   
-   # Show detailed health information
-   management.endpoint.health.show-details=always
-   ```
+The monitoring solution follows a simplified architecture:
 
-4. Start your Spring Boot application
+1. **Dashboard Application**: A Node.js/React application serving as the centralized monitoring dashboard and registration endpoint.
+2. **Client Library**: A Spring Boot auto-configuration JAR that applications include to register themselves with the dashboard.
+3. **Service Registration**: Spring Boot applications automatically register with the dashboard on startup.
+4. **Health Checks**: The dashboard periodically checks service health and collects metrics.
+5. **Log Streaming**: Real-time log streaming using WebSockets for instant feedback.
 
-## Docker Deployment
+## Deployment
 
-Build and run the dashboard using Docker:
+Both components can be deployed independently:
 
-```bash
-# Build the image
-docker build -t spring-boot-monitor .
-
-# Run the container
-docker run -p 3000:3000 spring-boot-monitor
-```
-
-For Kubernetes deployment, use the provided Kubernetes manifests in the `k8s` directory.
-
-## Architecture Diagram
-
-```
-┌────────────────────┐     Register     ┌───────────────────┐
-│  Spring Boot App   │───────────────▶ │                   │
-│                    │                  │     Dashboard     │
-│  ┌──────────────┐  │ ◀───────────────│                   │
-│  │   Actuator   │  │   Health Check   │  ┌─────────────┐  │
-│  └──────────────┘  │                  │  │  WebSocket  │  │
-│                    │   Metrics/Logs   │  │   Server    │  │
-│  ┌──────────────┐  │───────────────▶ │  └─────────────┘  │
-│  │ Registration │  │                  │                   │
-│  │    Client    │  │                  │  ┌─────────────┐  │
-│  └──────────────┘  │                  │  │ React UI    │  │
-└────────────────────┘                  │  └─────────────┘  │
-                                         └───────────────────┘
-```
-
-## Dashboard Screenshots
-
-### Services Overview
-![Services Overview](attached_assets/image_1746278648096.png)
-
-### Service Detail View
-![Service Detail](attached_assets/image_1746278748666.png)
-
-### Log Streaming
-![Log Streaming](attached_assets/image_1746278821059.png)
-
-### Metrics Dashboard
-![Metrics Dashboard](attached_assets/image_1746280724066.png)
-
-### Configuration Management
-![Configuration Management](attached_assets/image_1746281016656.png)
-
-### Dark Theme Support
-![Dark Theme](attached_assets/image_1746281180898.png)
-
-## Development
-
-### Project Structure
-
-- `/client` - React frontend application
-- `/server` - Node.js backend services
-- `/shared` - Shared schemas and types
-- `/examples` - Example Spring Boot integration code
-
-### Building the Spring Boot Client
-
-Navigate to the `/examples` directory and build the client:
-
-```bash
-cd examples
-mvn clean package
-```
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+- The dashboard application can be containerized and deployed to Kubernetes, Docker, or any cloud provider.
+- The client library is a standard Java library distributed via Maven or Gradle and included in Spring Boot applications.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License.
