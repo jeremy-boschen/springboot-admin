@@ -47,10 +47,8 @@ local_approach() {
   echo "Starting Fully Local development environment..."
   echo
   echo "Step 1: Starting the dashboard locally..."
-  gnome-terminal -- bash -c "cd obserra-dashboard && npm install && npm run dev; exec bash" || \
-  xterm -e "cd obserra-dashboard && npm install && npm run dev" || \
-  open -a Terminal.app "cd obserra-dashboard && npm install && npm run dev" || \
-  (cd obserra-dashboard && npm install && npm run dev &)
+  npm --prefix obserra-dashboard install
+  npm --prefix obserra-dashboard run dev &
   echo
   echo "Step 2: Building the Spring Boot starter..."
   ./gradlew :obserra-spring-boot-starter:build
@@ -59,7 +57,7 @@ local_approach() {
   echo "The app will be available at http://localhost:8080"
   echo "The debugger will be available on port 5005"
   echo
-  ./gradlew :obserra-samples:demo-app-gradle:bootRun --debug-jvm
+  ./gradlew :obserra-spring-boot-samples:demo-app-gradle:bootRun --debug-jvm
 }
 
 # Main script logic
