@@ -1,30 +1,31 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { vitePlugin as cartographer } from '@replit/vite-plugin-cartographer';
-import { runtimeErrorModalPlugin } from '@replit/vite-plugin-runtime-error-modal';
-import { tailwind } from '@tailwindcss/vite';
-import path from 'path';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
-    runtimeErrorModalPlugin(),
-    cartographer(),
-    tailwind(),
+    runtimeErrorOverlay(),
+    ...(process.env.NODE_ENV !== "production" &&
+    process.env.REPL_ID !== undefined
+      ? [
+          await import("@replit/vite-plugin-cartographer").then((m) =>
+            m.cartographer(),
+          ),
+        ]
+      : []),
   ],
-  server: {
-    hmr: {
-      clientPort: 443,
-    },
-  },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './client/src'),
-      '@components': path.resolve(__dirname, './client/src/components'),
-      '@assets': path.resolve(__dirname, './attached_assets'),
-      '@lib': path.resolve(__dirname, './client/src/lib'),
-      '@shared': path.resolve(__dirname, './shared'),
+      "@": path.resolve(import.meta.dirname, "client", "src"),
+      "@shared": path.resolve(import.meta.dirname, "shared"),
+      "@assets": path.resolve(import.meta.dirname, "attached_assets"),
     },
+  },
+  root: path.resolve(import.meta.dirname, "client"),
+  build: {
+    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    emptyOutDir: true,
   },
 });

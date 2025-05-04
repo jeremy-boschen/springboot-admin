@@ -1,19 +1,20 @@
 version: '3.8'
 
 services:
-  monitor-app:
+  k8s-springboot-dashboard:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: k8s-springboot-dashboard
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - CONFIG_PATH=/app/config.yaml
+      - KUBERNETES_IN_CLUSTER=false
+    volumes:
+      # Mount your own config file if needed
+      - ./config.yaml:/app/config.yaml
+      # For external kubeconfig
+      - ${KUBECONFIG:-~/.kube/config}:/kube/config:ro
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
