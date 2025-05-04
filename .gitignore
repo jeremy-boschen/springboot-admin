@@ -4,6 +4,7 @@ node_modules/
 # ───── Build Artifacts ─────
 dist/
 build/
+out/
 *.tar.gz
 
 # ───── Local Environment Config ─────
@@ -25,6 +26,9 @@ Thumbs.db
 # Optional: include project settings if useful
 !.idea/codeStyles/
 !.idea/codeStyles/*.xml
+
+# IntelliJ IDEA module files
+*.iml
 
 # ───── Logs & Temp ─────
 npm-debug.log*
@@ -48,3 +52,13 @@ vite.config.ts.*
 .docker/
 .kube/
 .skaffold/
+
+# ───── Java-specific ─────
+*.class
+*.jar
+*.war
+*.ear
+
+# ───── Gradle Wrapper ─────
+.gradle/
+gradle/wrapper/gradle-wrapper.jar

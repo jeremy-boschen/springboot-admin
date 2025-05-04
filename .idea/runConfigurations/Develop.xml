@@ -1,8 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Develop" type="NodeJSConfigurationType" node-parameters="server/index.ts" typescript-loader="bundled" working-dir="$PROJECT_DIR$">
-    <envs>
-      <env name="NODE_ENV" value="development" />
-    </envs>
-    <method v="2" />
-  </configuration>
-</component>
