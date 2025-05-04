@@ -1,0 +1,136 @@
+plugins {
+    id 'java-library'
+    id 'org.springframework.boot' version '3.2.0' apply false
+    id 'io.spring.dependency-management' version '1.1.4'
+    id 'maven-publish'
+}
+
+group = 'com.example'
+version = '1.0.0'
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
+
+repositories {
+    mavenCentral()
+}
+
+dependencyManagement {
+    imports {
+        mavenBom(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+    }
+}
+
+dependencies {
+    // Spring Boot (provided scope)
+    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
+    compileOnly 'org.springframework.boot:spring-boot-actuator'
+    compileOnly 'org.springframework:spring-web'
+    
+    // Optional annotation processing for auto-configuration
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    
+    // Test dependencies
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+// Don't include the Spring Boot application plugin jar
+bootJar {
+    enabled = false
+}
+
+// But do create the JAR
+jar {
+    enabled = true
+    archiveClassifier = ''
+}
+
+// Create Javadoc and sources JARs
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+// Custom task to create distribution with multiple Spring Boot version support
+task multiVersionDistribution(type: Zip) {
+    archiveBaseName = "${project.name}"
+    archiveVersion = "${project.version}"
+    archiveClassifier = 'dist'
+    
+    into('lib') {
+        from jar
+        from javadocJar
+        from sourcesJar
+    }
+    
+    into('samples') {
+        from 'samples'
+    }
+    
+    into('') {
+        from 'README.md'
+        from 'LICENSE'
+    }
+}
+
+// Publishing configuration
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            
+            pom {
+                name = 'Spring Boot Monitoring Client'
+                description = 'Spring Boot auto-configuration for registering applications with the monitoring dashboard'
+                url = 'https://github.com/example/spring-boot-monitor-client'
+                
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                
+                developers {
+                    developer {
+                        id = 'example'
+                        name = 'Example Developer'
+                        email = 'dev@example.com'
+                    }
+                }
+            }
+        }
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// Add profiles for different Spring Boot versions
+tasks.register('springBoot27') {
+    dependsOn tasks.clean
+    doLast {
+        project.ext.'springBootVersion' = '2.7.18'
+    }
+}
+
+tasks.register('springBoot30') {
+    dependsOn tasks.clean
+    doLast {
+        project.ext.'springBootVersion' = '3.0.12'
+    }
+}
+
+tasks.register('springBoot31') {
+    dependsOn tasks.clean
+    doLast {
+        project.ext.'springBootVersion' = '3.1.8'
+    }
+}
+
+tasks.register('springBoot32') {
+    dependsOn tasks.clean
+    doLast {
+        project.ext.'springBootVersion' = '3.2.0'
+    }
+}
