@@ -1,12 +1,12 @@
 plugins {
     id 'java-library'
+    id 'maven-publish'
     id 'org.springframework.boot' version '3.2.0' apply false
     id 'io.spring.dependency-management' version '1.1.4'
-    id 'maven-publish'
 }
 
 group = 'com.example'
-version = '1.0.0'
+version = '0.1.0-SNAPSHOT'
 sourceCompatibility = JavaVersion.VERSION_17
 targetCompatibility = JavaVersion.VERSION_17
 
@@ -16,72 +16,48 @@ repositories {
 
 dependencyManagement {
     imports {
-        mavenBom(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+        mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
     }
 }
 
 dependencies {
-    // Spring Boot (provided scope)
-    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
-    compileOnly 'org.springframework.boot:spring-boot-actuator'
-    compileOnly 'org.springframework:spring-web'
+    // Spring Boot dependencies (minimal set)
+    compileOnly 'org.springframework.boot:spring-boot-starter'
+    compileOnly 'org.springframework.boot:spring-boot-starter-web'
     
-    // Optional annotation processing for auto-configuration
+    // Spring Boot Auto Configuration
+    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
+    annotationProcessor 'org.springframework.boot:spring-boot-autoconfigure-processor'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     
     // Test dependencies
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
-// Don't include the Spring Boot application plugin jar
-bootJar {
-    enabled = false
+// Create a sources jar
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allJava
+    archiveClassifier.set('sources')
 }
 
-// But do create the JAR
-jar {
-    enabled = true
-    archiveClassifier = ''
+// Create a javadoc jar
+task javadocJar(type: Jar) {
+    from javadoc
+    archiveClassifier.set('javadoc')
 }
 
-// Create Javadoc and sources JARs
-java {
-    withJavadocJar()
-    withSourcesJar()
-}
-
-// Custom task to create distribution with multiple Spring Boot version support
-task multiVersionDistribution(type: Zip) {
-    archiveBaseName = "${project.name}"
-    archiveVersion = "${project.version}"
-    archiveClassifier = 'dist'
-    
-    into('lib') {
-        from jar
-        from javadocJar
-        from sourcesJar
-    }
-    
-    into('samples') {
-        from 'samples'
-    }
-    
-    into('') {
-        from 'README.md'
-        from 'LICENSE'
-    }
-}
-
-// Publishing configuration
+// Configure Maven publishing
 publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
+            artifact sourcesJar
+            artifact javadocJar
             
             pom {
-                name = 'Spring Boot Monitoring Client'
-                description = 'Spring Boot auto-configuration for registering applications with the monitoring dashboard'
-                url = 'https://github.com/example/spring-boot-monitor-client'
+                name = 'Spring Boot Monitor Client'
+                description = 'Client library for Spring Boot applications to register with the monitoring dashboard'
+                url = 'https://github.com/yourusername/spring-boot-monitor'
                 
                 licenses {
                     license {
@@ -92,9 +68,9 @@ publishing {
                 
                 developers {
                     developer {
-                        id = 'example'
-                        name = 'Example Developer'
-                        email = 'dev@example.com'
+                        id = 'your-id'
+                        name = 'Your Name'
+                        email = 'your.email@example.com'
                     }
                 }
             }
@@ -106,31 +82,17 @@ test {
     useJUnitPlatform()
 }
 
-// Add profiles for different Spring Boot versions
-tasks.register('springBoot27') {
-    dependsOn tasks.clean
-    doLast {
-        project.ext.'springBootVersion' = '2.7.18'
-    }
+// Disable the Spring Boot application plugin to build as a library
+bootJar {
+    enabled = false
 }
 
-tasks.register('springBoot30') {
-    dependsOn tasks.clean
-    doLast {
-        project.ext.'springBootVersion' = '3.0.12'
-    }
-}
-
-tasks.register('springBoot31') {
-    dependsOn tasks.clean
-    doLast {
-        project.ext.'springBootVersion' = '3.1.8'
-    }
-}
-
-tasks.register('springBoot32') {
-    dependsOn tasks.clean
-    doLast {
-        project.ext.'springBootVersion' = '3.2.0'
+// Enable the java library jar
+jar {
+    enabled = true
+    
+    // Ensure auto-configuration metadata is included
+    from('build/classes/java/main') {
+        include 'META-INF/**'
     }
 }

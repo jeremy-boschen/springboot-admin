@@ -1,141 +1,156 @@
-# Spring Boot Monitoring Client
+# Spring Boot Monitor Client
 
-This library provides automatic integration between Spring Boot applications and the Spring Boot Monitoring Dashboard.
+A Spring Boot auto-configuration library that simplifies adding monitoring capabilities to your Spring Boot applications. This library automatically registers your Spring Boot application with the monitoring dashboard, providing detailed metrics, logs, and health status information.
 
 ## Features
 
-- **Zero-Configuration Integration**: Add the dependency and enable monitoring with one property
-- **Automatic Service Registration**: Applications automatically register with the dashboard on startup
-- **Health Monitoring**: Dashboard periodically checks application health via Spring Boot Actuator
-- **Metrics Collection**: Exposes memory, CPU, and error metrics from your application
-- **Log Streaming**: Supports real-time log streaming to the dashboard
-- **Configuration Management**: View and update application configuration through the dashboard
-- **Multi-Version Support**: Compatible with Spring Boot 2.7.x through 3.2.x
+- **Zero configuration setup**: Works out of the box with sensible defaults
+- **Auto-registration**: Automatically registers with the monitoring dashboard on startup
+- **Actuator integration**: Leverages Spring Boot Actuator for health, metrics, and environment information
+- **Custom metrics**: Send custom application metrics to the dashboard
+- **Real-time log streaming**: View application logs in real-time on the dashboard
+- **Service health monitoring**: Automatically monitor service health status
 
-## Installation
+## Requirements
 
-### Gradle
+- Java 17 or later
+- Spring Boot 3.0 or later
+- Spring Boot Actuator (included as a dependency)
 
-Add the following to your `build.gradle`:
+## Getting Started
 
-```groovy
-dependencies {
-    implementation 'com.example:spring-boot-monitor-client:1.0.0'
-    
-    // Required Spring Boot dependencies
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-}
-```
+### 1. Add the Dependency
 
-### Maven
-
-If you prefer Maven, add to your `pom.xml`:
-
+#### Maven
 ```xml
 <dependency>
-    <groupId>com.example</groupId>
-    <artifactId>spring-boot-monitor-client</artifactId>
-    <version>1.0.0</version>
+  <groupId>com.example</groupId>
+  <artifactId>spring-boot-monitor-client</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
 </dependency>
 ```
 
-## Configuration
+#### Gradle
+```groovy
+implementation 'com.example:spring-boot-monitor-client:0.1.0-SNAPSHOT'
+```
 
-Add the following properties to your `application.properties` or `application.yml`:
+### 2. Configure the Monitor
+
+Add the following properties to your `application.properties` or `application.yml` file:
 
 ```properties
-# Enable Boot Monitoring (required)
+# Enable monitoring (required)
 monitor.enabled=true
 
-# Monitor Dashboard URL (required)
-# For Kubernetes, this would be the service name
-monitor.dashboard-url=http://dashboard-service:3000
+# URL of the monitoring dashboard (required)
+monitor.dashboard-url=http://monitoring-dashboard:3000
 
 # Application ID (optional, will be generated if not provided)
-# Use a consistent ID for applications that should maintain history across restarts
-monitor.app-id=my-application-id
+monitor.app-id=my-unique-application-id
 
-# Registration settings
+# Registration settings (optional)
 monitor.auto-register=true
 monitor.heartbeat-interval-ms=30000
 ```
 
-## Spring Boot Actuator Configuration
+### 3. Enable Actuator Endpoints
 
-For the monitoring dashboard to collect metrics and logs, enable the appropriate Actuator endpoints:
+For best results, enable all Spring Boot Actuator endpoints:
 
 ```properties
-# Expose all actuator endpoints
+# Spring Boot Actuator Configuration
 management.endpoints.web.exposure.include=*
-
-# Show detailed health information
 management.endpoint.health.show-details=always
-
-# Configure the base path for actuator endpoints (default: /actuator)
 management.endpoints.web.base-path=/actuator
-```
 
-## Application Information
-
-To display useful information on the dashboard, configure the `info` endpoint:
-
-```properties
 # Application Info (used for dashboard)
 info.app.name=${spring.application.name}
 info.app.version=1.0.0
-info.app.description=Your Application Description
+info.app.description=Your application description
 info.app.contact.email=admin@example.com
 ```
 
-## How It Works
+## Advanced Usage
 
-1. When your application starts, the `SpringBootRegistrar` automatically registers with the monitoring dashboard
-2. The dashboard server periodically performs health checks on your application
-3. Metrics are collected at regular intervals (configurable)
-4. Logs are streamed in real-time through a WebSocket connection
-5. Configuration changes made through the dashboard are applied to your application
+### Sending Custom Metrics
 
-## Building From Source
+You can send custom metrics to the dashboard using the `MonitorService`:
 
-To build the client from source:
-
-```bash
-./gradlew clean build
+```java
+@Service
+public class MyService {
+    
+    private final MonitorService monitorService;
+    
+    @Autowired
+    public MyService(MonitorService monitorService) {
+        this.monitorService = monitorService;
+    }
+    
+    public void processOrders() {
+        // Process orders...
+        
+        // Send custom metrics
+        Map<String, Object> metrics = new HashMap<>();
+        metrics.put("ordersProcessed", 42);
+        metrics.put("averageProcessingTimeMs", 156);
+        
+        monitorService.sendCustomMetrics(metrics);
+    }
+}
 ```
 
-To build for a specific Spring Boot version:
+### Manual Registration
 
-```bash
-./gradlew springBoot27 build  # For Spring Boot 2.7.x
-./gradlew springBoot30 build  # For Spring Boot 3.0.x
-./gradlew springBoot31 build  # For Spring Boot 3.1.x
-./gradlew springBoot32 build  # For Spring Boot 3.2.x (default)
+If auto-registration is disabled, you can manually register with the dashboard:
+
+```java
+@Service
+public class StartupService {
+    
+    private final MonitorService monitorService;
+    
+    @Autowired
+    public StartupService(MonitorService monitorService) {
+        this.monitorService = monitorService;
+    }
+    
+    @EventListener(ApplicationReadyEvent.class)
+    public void onApplicationReady() {
+        Map<String, Object> appInfo = new HashMap<>();
+        appInfo.put("name", "My Custom App");
+        appInfo.put("version", "1.2.3");
+        
+        monitorService.registerWithDashboard(appInfo);
+    }
+}
 ```
 
-## Example Application
+## Sample Application
 
-See the `samples` directory for example applications using this client.
+The library includes a sample application in the `samples/demo-app` directory that demonstrates how to use the monitor client. You can run it with:
 
-## Troubleshooting
+```bash
+./gradlew :samples:demo-app:bootRun
+```
 
-### Registration Issues
+The sample application includes endpoints that generate various metrics and logs to demonstrate the monitoring capabilities.
 
-If your application fails to register with the dashboard:
+## Building from Source
 
-1. Check that the dashboard service is running and accessible
-2. Verify the correct dashboard URL in your application properties
-3. Ensure network connectivity between your application and the dashboard
-4. Check the application logs for any registration errors
+To build the library from source:
 
-### Metrics Collection Issues
+```bash
+./gradlew build
+```
 
-If metrics aren't showing up on the dashboard:
+To install to your local Maven repository:
 
-1. Verify that the actuator endpoints are properly exposed
-2. Check that the application has the necessary permissions to gather system metrics
-3. Look for any errors in the application logs related to metrics collection
+```bash
+./gradlew publishToMavenLocal
+```
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License.

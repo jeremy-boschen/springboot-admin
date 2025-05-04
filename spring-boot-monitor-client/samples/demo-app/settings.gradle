@@ -1,0 +1,4 @@
+rootProject.name = 'demo-app'
+
+// Include the parent project for the client dependency
+includeBuild '../..'
