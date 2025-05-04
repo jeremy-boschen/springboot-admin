@@ -32,8 +32,8 @@ The monitoring solution is made up of two main components:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/spring-boot-monitor-app.git
-cd spring-boot-monitor-app
+git clone https://github.com/yourusername/obserra-dashboard.git
+cd obserra-dashboard
 
 # Install dependencies
 npm install
@@ -46,8 +46,8 @@ npm run dev
 
 ```bash
 # Build and run with Docker
-docker build -t spring-boot-monitor-app .
-docker run -p 3000:3000 spring-boot-monitor-app
+docker build -t obserra-dashboard .
+docker run -p 3000:3000 obserra-dashboard
 ```
 
 #### Docker Compose

@@ -1,5 +1,5 @@
 modules = ["nodejs-20", "web", "postgresql-16"]
-run = "npm --prefix ./spring-boot-monitor-app run dev"
+run = "npm --prefix ./obserra-dashboard run dev"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
@@ -7,8 +7,8 @@ channel = "stable-24_05"
 
 [deployment]
 deploymentTarget = "autoscale"
-build = ["npm", "--prefix ./spring-boot-monitor-app", "run", "build"]
-run = ["npm", "--prefix ./spring-boot-monitor-app", "run", "start"]
+build = ["npm", "--prefix ./obserra-dashboard", "run", "build"]
+run = ["npm", "--prefix ./obserra-dashboard", "run", "start"]
 
 [[ports]]
 localPort = 3000
@@ -37,7 +37,7 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm --prefix ./spring-boot-monitor-app run dev"
+args = "npm --prefix ./obserra-dashboard run dev"
 
 [[workflows.workflow]]
 name = "Install application"
@@ -46,4 +46,4 @@ author = 42209403
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm --prefix ./spring-boot-monitor-app install"
+args = "npm --prefix ./obserra-dashboard install"
