@@ -17,7 +17,7 @@ data:
 
     actuator:
       defaultPort: 8080
-      basePath: /actuator
+      basePath: /management
       endpoints:
         health: /health
         info: /info

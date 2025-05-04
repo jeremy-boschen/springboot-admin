@@ -12,7 +12,7 @@ spec:
       labels:
         app: dashboard
     spec:
-      serviceAccountName: k8s-springboot-dashboard-sa  # ✅ Fixed
+      serviceAccountName: k8s-springboot-dashboard-sa 
       containers:
         - name: dashboard
           image: k8s-springboot-dashboard

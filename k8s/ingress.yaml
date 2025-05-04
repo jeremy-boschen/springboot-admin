@@ -11,8 +11,7 @@ metadata:
 spec:
   ingressClassName: "nginx"
   rules:
-  - host:  microservices.info  # Replace with your domain
-    http:
+  - http:
       paths:
       - path: /admin
         pathType: Prefix
@@ -21,6 +20,8 @@ spec:
             name: k8s-springboot-dashboard
             port:
               number: 80
+    #host:  rm-dev.pfizer.com  # Replace with your domain
+    
   # Optional: Add TLS configuration
   # tls:
   # - hosts:
