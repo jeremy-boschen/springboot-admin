@@ -188,7 +188,7 @@ export class MemStorage implements IStorage {
 
     if (!hostAddress || !port) {
       try {
-        const url = new URL(registration.actuatorBaseUrl);
+        const url = new URL(registration.actuatorUrl);
         hostAddress = hostAddress || url.hostname;
         port = port || (url.port ? parseInt(url.port) : (url.protocol === 'https:' ? 443 : 80));
       } catch (error) {
@@ -204,7 +204,7 @@ export class MemStorage implements IStorage {
     }
 
     // Generate health check URL
-    const healthUrl = registration.actuatorBaseUrl + (registration.healthCheckPath || '/actuator/health');
+    const healthUrl = registration.actuatorUrl + (registration.healthCheckPath || '/actuator/health');
 
     // Prepare service data
     const serviceData: InsertService = {
@@ -212,7 +212,7 @@ export class MemStorage implements IStorage {
       namespace: 'default', // Default namespace for directly registered services
       version: registration.version || 'unknown',
       status: 'UNKNOWN', // Will be updated by health check
-      actuatorUrl: registration.actuatorBaseUrl,
+      actuatorUrl: registration.actuatorUrl,
       registrationSource: 'direct',
       hostAddress,
       port: port as number, // TypeScript needs help here

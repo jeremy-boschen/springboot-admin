@@ -86,7 +86,7 @@ export type RegistrationSource = z.infer<typeof RegistrationSourceEnum>;
 export const serviceRegistrationSchema = z.object({
   // Required fields
   name: z.string().min(1, "Service name is required"),
-  actuatorBaseUrl: z.string().url("A valid actuator base URL is required"),
+  actuatorUrl: z.string().url("A valid actuator base URL is required"),
   
   // Optional fields with defaults
   appId: z.string().optional(),

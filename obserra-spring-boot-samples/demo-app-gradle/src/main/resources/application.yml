@@ -29,6 +29,6 @@ info:
 # Boot Monitoring Dashboard Configuration
 monitor:
   enabled: true
-  dashboard-url: http://localhost:3000
+  dashboard-url: http://localhost:5000
   app-id: demo-app-${random.uuid}
   heartbeat-interval-ms: 30000

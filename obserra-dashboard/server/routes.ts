@@ -36,13 +36,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if the actuator URL is reachable
       try {
-        const healthEndpoint = registrationData.actuatorBaseUrl + 
+        const healthEndpoint = registrationData.actuatorUrl +
           (registrationData.healthCheckPath || '/actuator/health');
         
         await axios.get(healthEndpoint, { timeout: 5000 });
       } catch (error) {
         console.error('Error connecting to service at registration:', error);
-        // Continue with registration, but log the issue
+        // Continue with registration but log the issue
       }
       
       // Register the service

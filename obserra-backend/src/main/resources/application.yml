@@ -1,0 +1,85 @@
+# Server configuration
+server:
+  port: 5000
+  servlet:
+    context-path: /
+
+# Spring configuration
+spring:
+  application:
+    name: obserra-backend
+
+  # Database configuration is disabled - using in-memory storage instead
+  # datasource:
+  #   url: jdbc:h2:mem:obserra
+  #   username: sa
+  #   password: 
+  #   driver-class-name: org.h2.Driver
+
+  # JPA configuration is disabled - using in-memory storage instead
+  # jpa:
+  #   hibernate:
+  #     ddl-auto: update
+  #   properties:
+  #     hibernate:
+  #       dialect: org.hibernate.dialect.H2Dialect
+  #   show-sql: false
+
+  # H2 Console configuration is disabled - using in-memory storage instead
+  # h2:
+  #   console:
+  #     enabled: true
+  #     path: /h2-console
+
+  # Jackson configuration
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    date-format: yyyy-MM-dd'T'HH:mm:ss.SSSZ
+    default-property-inclusion: non_null
+
+# Actuator configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers
+  endpoint:
+    health:
+      show-details: always
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    org.newtco.obserra: DEBUG
+    org.springframework.web: INFO
+    org.hibernate: INFO
+
+# Application-specific configuration
+obserra:
+  # Health check configuration
+  health-check:
+    interval-ms: 30000
+    timeout-ms: 5000
+    retry-delay-ms: 5000
+
+  # Metrics collection configuration
+  metrics:
+    interval-ms: 30000
+
+  # Service discovery configuration
+  service-discovery:
+    interval-ms: 60000
+    kubernetes:
+      enabled: false
+
+  # Logs configuration
+  logs:
+    recent-limit: 100
+    websocket-enabled: true
+
+  # Server configuration
+  server:
+    host: 0.0.0.0
+    port: 5000

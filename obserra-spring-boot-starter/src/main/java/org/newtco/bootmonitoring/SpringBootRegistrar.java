@@ -46,7 +46,7 @@ public class SpringBootRegistrar {
                 try {
                     // Build application info
                     Map<String, Object> appInfo = buildApplicationInfo();
-                    
+
                     // Register with dashboard using the monitor service
                     monitorService.registerWithDashboard(appInfo);
                 } catch (Exception e) {
@@ -81,41 +81,38 @@ public class SpringBootRegistrar {
      */
     private Map<String, Object> buildApplicationInfo() throws Exception {
         Map<String, Object> appInfo = new HashMap<>();
-        
+
         // Application name and ID
         appInfo.put("name", environment.getProperty("spring.application.name", "spring-boot-app"));
         appInfo.put("appId", properties.getAppId() != null ? 
             properties.getAppId() : UUID.randomUUID().toString());
-        
+
         // Server details
         String serverPort = environment.getProperty("server.port", "8080");
         int port = Integer.parseInt(serverPort);
         String hostAddress = InetAddress.getLocalHost().getHostAddress();
         String managementContextPath = environment.getProperty("management.endpoints.web.base-path", "/actuator");
-        
+
         // Construct the actuator base URL
         String actuatorBaseUrl = "http://" + hostAddress + ":" + port + managementContextPath;
         appInfo.put("actuatorUrl", actuatorBaseUrl);
-        
+
         // Additional details
         appInfo.put("version", environment.getProperty("info.app.version", "unknown"));
         appInfo.put("autoRegister", properties.isAutoRegister());
         appInfo.put("healthCheckInterval", properties.getHeartbeatIntervalMs() / 1000); // Convert to seconds
-        
+
         // Connection details
         appInfo.put("hostAddress", hostAddress);
         appInfo.put("port", port);
         appInfo.put("contextPath", environment.getProperty("server.servlet.context-path", ""));
-        
-        // Custom paths if configured differently
-        appInfo.put("healthCheckPath", managementContextPath + "/health");
-        appInfo.put("metricsPath", managementContextPath + "/metrics");
-        appInfo.put("logsPath", managementContextPath + "/logfile");
-        appInfo.put("configPath", managementContextPath + "/env");
-        
+
+        // We no longer need to send specific endpoint paths
+        // The backend will discover available endpoints from the actuatorUrl
+
         // Source information
         appInfo.put("registrationSource", "direct");
-        
+
         return appInfo;
     }
 }
