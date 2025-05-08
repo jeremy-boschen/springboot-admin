@@ -6,7 +6,7 @@ Obserra is a comprehensive monitoring solution for Spring Boot applications, des
 
 This repository contains two main components:
 
-1. **[obserra-dashboard](./obserra-dashboard)**: The Node.js/React dashboard application
+1. **[obserra-dashboard](obserra-frontend)**: The Node.js/React dashboard application
    - Centralized UI for visualizing service health and activity
    - Real-time metrics and log streaming
    - REST API for manual service registration
@@ -32,7 +32,7 @@ This repository contains two main components:
 
 ### Dashboard Application
 
-Refer to the [obserra-dashboard README](./obserra-dashboard/README.md) for setup and run instructions.
+Refer to the [obserra-dashboard README](obserra-frontend/README.md) for setup and run instructions.
 
 ### Client Library
 

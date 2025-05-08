@@ -1,136 +1,102 @@
 package org.newtco.bootmonitoring;
 
+import org.newtco.obserra.shared.model.ServiceRegistration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestTemplate;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import jakarta.annotation.PreDestroy;
 
 /**
- * Service for interacting with the monitoring dashboard
+ * Service for interacting with the monitoring backend
  * <p>
- * This service provides methods for registering the application
- * with the monitoring dashboard and sending custom metrics.
+ * This service provides methods for registering the application with the monitoring backend and sending custom
+ * metrics.
  */
 public class MonitorService {
+    private static final Logger logger = LoggerFactory.getLogger(MonitorService.class);
 
-    private final MonitorProperties properties;
+    private final String       registrationServer;
     private final RestTemplate restTemplate;
-    private String registeredAppId;
-    private String hostAddress;
+    private       String       registrationId;
 
     /**
      * Constructor
-     * 
+     *
      * @param properties Monitor configuration properties
      */
-    public MonitorService(MonitorProperties properties) {
-        this.properties = properties;
-        this.restTemplate = new RestTemplate();
-        
-        try {
-            this.hostAddress = InetAddress.getLocalHost().getHostAddress();
-        } catch (UnknownHostException e) {
-            this.hostAddress = "localhost";
-        }
+    public MonitorService(RestTemplateBuilder restTemplateBuilder, MonitorProperties properties) {
+        this.restTemplate       = restTemplateBuilder.build();
+        this.registrationServer = properties.getRegistrationServer() + (properties.getRegistrationServer().endsWith("/")
+                                                                        ? "" : "/");
     }
 
     /**
-     * Register application with the dashboard manually
-     * 
-     * This method can be used if auto-registration is disabled
-     * or if you need to re-register the application.
-     * 
-     * @param appInfo Map of application information
-     * @return The registered application ID
+     * Register an application with the backend manually using a ServiceRegistrationRequest
+     * <p>
+     * This method can be used if auto-registration is disabled or if you need to re-register the application.
+     *
+     * @param registration ServiceRegistrationRequest with application information
      */
-    public String registerWithDashboard(Map<String, Object> appInfo) {
+    public void registerWithBackend(ServiceRegistration.Request registration) {
         try {
-            // Build registration payload
-            Map<String, Object> registration = new HashMap<>(appInfo);
-            
-            // Add required fields if not present
-            if (!registration.containsKey("appId")) {
-                registration.put("appId", properties.getAppId() != null ? 
-                    properties.getAppId() : UUID.randomUUID().toString());
-            }
-            
-            if (!registration.containsKey("hostAddress")) {
-                registration.put("hostAddress", hostAddress);
-            }
-            
-            // Add source information
-            registration.put("registrationSource", "direct");
-
-            // Register with dashboard
-            HttpHeaders headers = new HttpHeaders();
+            var headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(registration, headers);
-            Map response = restTemplate.postForObject(
-                    properties.getDashboardUrl() + "/api/register", 
-                    request, 
-                    Map.class);
-            
-            if (response != null && response.containsKey("appId")) {
-                registeredAppId = (String) response.get("appId");
-                return registeredAppId;
+
+            var response = restTemplate.postForObject(
+                    registrationServer + "api/service/register",
+                    new HttpEntity<>(registration, headers),
+                    ServiceRegistration.Response.class);
+
+            if (response != null && response.getRegistrationId() != null) {
+                registrationId = response.getRegistrationId();
             } else {
-                throw new RuntimeException("Failed to register with dashboard: no appId returned");
+                logger.error("Failed to register with monitoring backend: no registrationId returned");
             }
         } catch (Exception e) {
-            throw new RuntimeException("Failed to register with dashboard", e);
+            logger.error("Failed to register with monitoring backend", e);
         }
     }
-    
-    /**
-     * Send custom metrics to the dashboard
-     * 
-     * @param metrics Map of custom metrics
-     */
-    public void sendCustomMetrics(Map<String, Object> metrics) {
-        if (registeredAppId == null) {
-            throw new IllegalStateException("Application is not registered with the dashboard");
-        }
-        
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            
-            Map<String, Object> payload = new HashMap<>(metrics);
-            payload.put("appId", registeredAppId);
-            
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
-            restTemplate.postForObject(
-                    properties.getDashboardUrl() + "/api/metrics/custom", 
-                    request, 
-                    Map.class);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to send custom metrics", e);
-        }
-    }
-    
+
     /**
      * Get the registered application ID
-     * 
+     *
      * @return The registered application ID
      */
-    public String getRegisteredAppId() {
-        return registeredAppId;
+    public String getRegistrationId() {
+        return registrationId;
     }
-    
+
     /**
-     * Set the registered application ID
-     * This is usually called internally but can be used for testing
-     * 
-     * @param registeredAppId The registered application ID
+     * Set the registered application ID This is usually called internally but can be used for testing
+     *
+     * @param registrationId The registered application ID
      */
-    public void setRegisteredAppId(String registeredAppId) {
-        this.registeredAppId = registeredAppId;
+    public void setRegistrationId(String registrationId) {
+        this.registrationId = registrationId;
+    }
+
+    /**
+     * Deregister application from the backend
+     * <p>
+     * This method should be called when the application is shutting down to notify the backend that the service is no
+     * longer available.
+     */
+    @PreDestroy
+    public void unregisterFromBackend() {
+        if (registrationId != null) {
+            try {
+                // Deregister with Backend
+                restTemplate.delete(registrationServer + "api/service/unregister/" + registrationId);
+            } catch (Exception e) {
+                logger.error("Failed to deregister from backend", e);
+            }
+
+            registrationId = null;
+        }
     }
 }

@@ -12,6 +12,9 @@ java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(17))
     }
+
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 repositories {
@@ -28,11 +31,18 @@ dependencies {
     // Spring Boot dependencies (minimal set)
     compileOnly("org.springframework.boot:spring-boot-starter")
     compileOnly("org.springframework.boot:spring-boot-starter-web")
+    compileOnly("org.springframework.boot:spring-boot-actuator-autoconfigure")
 
     // Spring Boot Auto Configuration
     compileOnly("org.springframework.boot:spring-boot-autoconfigure")
     annotationProcessor("org.springframework.boot:spring-boot-autoconfigure-processor")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+
+    // Logging - using SLF4J API as recommended by Spring Boot
+    implementation("org.slf4j:slf4j-api")
+
+    // Obserra shared module
+    implementation(project(":obserra-shared"))
 
     // Test dependencies
     testImplementation("org.springframework.boot:spring-boot-starter-test")

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build:dashboard": "npm --prefix obserra-dashboard run build",
-    "start:dashboard": "npm --prefix obserra-dashboard run dev"
+    "build:dashboard": "npm --prefix obserra-frontend run build",
+    "start:dashboard": "npm --prefix obserra-frontend run dev"
   }
 }

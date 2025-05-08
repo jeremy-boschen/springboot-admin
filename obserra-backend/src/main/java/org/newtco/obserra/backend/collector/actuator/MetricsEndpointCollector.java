@@ -1,4 +1,4 @@
-package org.newtco.obserra.backend.collector;
+package org.newtco.obserra.backend.collector.actuator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,7 +26,7 @@ import java.util.Map;
  * Collector for metrics from the Spring Boot actuator metrics endpoint.
  */
 @Component
-public class MetricsEndpointCollector implements ActuatorEndpointCollector {
+public class MetricsEndpointCollector implements ActuatorCollector {
 
     private static final Logger logger = LoggerFactory.getLogger(MetricsEndpointCollector.class);
     private static final String ENDPOINT_TYPE = "metrics";
@@ -46,8 +46,8 @@ public class MetricsEndpointCollector implements ActuatorEndpointCollector {
 
         // Configure RestTemplate with timeout
         this.restTemplate = restTemplateBuilder
-                .setConnectTimeout(Duration.ofMillis(metricsTimeoutMs))
-                .setReadTimeout(Duration.ofMillis(metricsTimeoutMs))
+                .connectTimeout(Duration.ofMillis(metricsTimeoutMs))
+                .readTimeout(Duration.ofMillis(metricsTimeoutMs))
                 .build();
     }
 
@@ -58,7 +58,7 @@ public class MetricsEndpointCollector implements ActuatorEndpointCollector {
 
     @Override
     public boolean canHandle(ActuatorEndpoint endpoint) {
-        return endpoint != null && ENDPOINT_TYPE.equals(endpoint.getId());
+        return endpoint != null && ENDPOINT_TYPE.equals(endpoint.getType());
     }
 
     @Override
@@ -106,7 +106,7 @@ public class MetricsEndpointCollector implements ActuatorEndpointCollector {
      * @return A JsonNode containing the collected metrics, or null if collection failed
      */
     private JsonNode collectJvmMetrics(Service service, ActuatorEndpoint endpoint) {
-        String baseUrl = endpoint.getUrl();
+        String baseUrl = endpoint.getHref();
         if (baseUrl.endsWith("/")) {
             baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
         }

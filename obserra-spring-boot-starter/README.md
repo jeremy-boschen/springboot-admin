@@ -1,156 +1,88 @@
-# Spring Boot Monitor Client
+# Obserra Spring Boot Starter
 
-A Spring Boot auto-configuration library that simplifies adding monitoring capabilities to your Spring Boot applications. This library automatically registers your Spring Boot application with the monitoring dashboard, providing detailed metrics, logs, and health status information.
+This module provides automatic service registration for Spring Boot applications with the Obserra monitoring frontend.
 
-## Features
+## Service Registration Process
 
-- **Zero configuration setup**: Works out of the box with sensible defaults
-- **Auto-registration**: Automatically registers with the monitoring dashboard on startup
-- **Actuator integration**: Leverages Spring Boot Actuator for health, metrics, and environment information
-- **Custom metrics**: Send custom application metrics to the dashboard
-- **Real-time log streaming**: View application logs in real-time on the dashboard
-- **Service health monitoring**: Automatically monitor service health status
+The Obserra Spring Boot Starter automatically registers your Spring Boot application with the Obserra monitoring frontend, enabling real-time monitoring, metrics collection, and health checks.
+
+### How Service Registration Works
+
+1. **Initialization**: When your Spring Boot application starts, the `SpringBootRegistrar` component is initialized.
+
+2. **Auto-Registration**: Once the application is ready (triggered by the `ApplicationReadyEvent`), the registrar checks if monitoring is enabled and auto-registration is turned on.
+
+3. **Building Registration Data**: The registrar collects information about your application, including:
+   - Application name (from `spring.application.name` property)
+   - Application ID (configured or auto-generated UUID)
+   - Host address and port
+   - Actuator endpoints URL
+   - Version information
+   - Context path
+
+4. **Registration Request**: The collected information is packaged into a `ServiceRegistrationRequest` object and sent to the Obserra backend via the `MonitorService`.
+
+5. **Response Handling**: Upon successful registration, the backend returns a `ServiceRegistrationResponse` containing the registered application ID, which is stored for future communications.
+
+6. **Heartbeat Mechanism**: After registration, the application sends periodic heartbeats to the backend to indicate it's still running. The default interval is 30 seconds.
+
+## Configuration
+
+Configure the Obserra monitoring in your `application.properties` or `application.yml` file:
+
+```yaml
+# Enable/disable Obserra monitoring
+obserra:
+  enabled: true
+
+  # Registration server URL (default: localhost:3000)
+  registration-server: http://localhost:5000
+
+  # Optional: Specify a custom application ID
+  # If not provided, a random UUID will be generated
+  app-id: my-custom-app-id
+
+  # Optional: Specify application name and metadata
+  app-name: my-application
+  app-description: My application description
+  app-version: 1.0.0
+
+  # Enable/disable auto-registration (default: true)
+  auto-register: true
+
+  # Heartbeat interval (default: 30s)
+  check-interval: 15s
+```
+
+## Manual Registration
+
+If auto-registration is disabled, you can manually register your application using the `MonitorService`:
+
+```java
+@Autowired
+private MonitorService monitorService;
+
+public void registerManually() {
+    ServiceRegistration.Request request = new ServiceRegistration.Request();
+    request.setName("my-application");
+    request.setAppId("custom-app-id");
+    // Set other properties as needed
+
+    monitorService.registerWithDashboard(request);
+}
+```
 
 ## Requirements
 
-- Java 17 or later
-- Spring Boot 3.0 or later
-- Spring Boot Actuator (included as a dependency)
+- Spring Boot 2.x or higher
+- Spring Boot Actuator enabled
+- Network connectivity to the Obserra backend
 
-## Getting Started
+## Troubleshooting
 
-### 1. Add the Dependency
+If registration fails, check the following:
 
-#### Maven
-```xml
-<dependency>
-  <groupId>com.example</groupId>
-  <artifactId>obserra-spring-boot-starter</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
-</dependency>
-```
-
-#### Gradle
-```groovy
-implementation 'com.example:obserra-spring-boot-starter:0.1.0-SNAPSHOT'
-```
-
-### 2. Configure the Monitor
-
-Add the following properties to your `application.properties` or `application.yml` file:
-
-```properties
-# Enable monitoring (required)
-monitor.enabled=true
-
-# URL of the monitoring dashboard (required)
-monitor.dashboard-url=http://monitoring-dashboard:3000
-
-# Application ID (optional, will be generated if not provided)
-monitor.app-id=my-unique-application-id
-
-# Registration settings (optional)
-monitor.auto-register=true
-monitor.heartbeat-interval-ms=30000
-```
-
-### 3. Enable Actuator Endpoints
-
-For best results, enable all Spring Boot Actuator endpoints:
-
-```properties
-# Spring Boot Actuator Configuration
-management.endpoints.web.exposure.include=*
-management.endpoint.health.show-details=always
-management.endpoints.web.base-path=/actuator
-
-# Application Info (used for dashboard)
-info.app.name=${spring.application.name}
-info.app.version=1.0.0
-info.app.description=Your application description
-info.app.contact.email=admin@example.com
-```
-
-## Advanced Usage
-
-### Sending Custom Metrics
-
-You can send custom metrics to the dashboard using the `MonitorService`:
-
-```java
-@Service
-public class MyService {
-    
-    private final MonitorService monitorService;
-    
-    @Autowired
-    public MyService(MonitorService monitorService) {
-        this.monitorService = monitorService;
-    }
-    
-    public void processOrders() {
-        // Process orders...
-        
-        // Send custom metrics
-        Map<String, Object> metrics = new HashMap<>();
-        metrics.put("ordersProcessed", 42);
-        metrics.put("averageProcessingTimeMs", 156);
-        
-        monitorService.sendCustomMetrics(metrics);
-    }
-}
-```
-
-### Manual Registration
-
-If auto-registration is disabled, you can manually register with the dashboard:
-
-```java
-@Service
-public class StartupService {
-    
-    private final MonitorService monitorService;
-    
-    @Autowired
-    public StartupService(MonitorService monitorService) {
-        this.monitorService = monitorService;
-    }
-    
-    @EventListener(ApplicationReadyEvent.class)
-    public void onApplicationReady() {
-        Map<String, Object> appInfo = new HashMap<>();
-        appInfo.put("name", "My Custom App");
-        appInfo.put("version", "1.2.3");
-        
-        monitorService.registerWithDashboard(appInfo);
-    }
-}
-```
-
-## Sample Application
-
-The library includes a sample application in the `samples/demo-app` directory that demonstrates how to use the monitor client. You can run it with:
-
-```bash
-./gradlew :samples:demo-app:bootRun
-```
-
-The sample application includes endpoints that generate various metrics and logs to demonstrate the monitoring capabilities.
-
-## Building from Source
-
-To build the library from source:
-
-```bash
-./gradlew build
-```
-
-To install to your local Maven repository:
-
-```bash
-./gradlew publishToMavenLocal
-```
-
-## License
-
-This project is licensed under the MIT License.
+1. Ensure the Obserra backend is running and accessible
+2. Verify that the `obserra.registration-server` property is correctly set
+3. Make sure Spring Boot Actuator is enabled and endpoints are accessible
+4. Check network connectivity between your application and the backend

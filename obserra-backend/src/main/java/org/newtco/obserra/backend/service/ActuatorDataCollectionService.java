@@ -1,6 +1,7 @@
 package org.newtco.obserra.backend.service;
 
-import org.newtco.obserra.backend.collector.ActuatorEndpointCollector;
+import org.newtco.obserra.backend.collector.actuator.ActuatorCollector;
+import org.newtco.obserra.backend.collector.actuator.DiscoveryService;
 import org.newtco.obserra.backend.model.ActuatorEndpoint;
 import org.newtco.obserra.backend.model.Service;
 import org.newtco.obserra.backend.storage.Storage;
@@ -24,24 +25,24 @@ public class ActuatorDataCollectionService {
 
     private static final Logger logger = LoggerFactory.getLogger(ActuatorDataCollectionService.class);
 
-    private final Storage storage;
-    private final Map<String, ActuatorEndpointCollector> collectors;
-    private final ActuatorEndpointDiscoveryService discoveryService;
+    private final Storage                        storage;
+    private final Map<String, ActuatorCollector> collectors;
+    private final DiscoveryService               discoveryService;
 
     @Autowired
     public ActuatorDataCollectionService(
             Storage storage,
-            List<ActuatorEndpointCollector> collectorList,
-            ActuatorEndpointDiscoveryService discoveryService) {
+            List<ActuatorCollector> collectorList,
+            DiscoveryService discoveryService) {
         this.storage = storage;
         this.discoveryService = discoveryService;
 
         // Map collectors by endpoint type for easy lookup
         this.collectors = collectorList.stream()
-                .collect(Collectors.toMap(ActuatorEndpointCollector::getEndpointType, Function.identity()));
+                .collect(Collectors.toMap(ActuatorCollector::getEndpointType, Function.identity()));
 
-        logger.info("Initialized with {} collectors: {}", collectors.size(), 
-                collectors.keySet().stream().collect(Collectors.joining(", ")));
+        logger.info("Initialized with {} collectors: {}", collectors.size(),
+                    String.join(", ", collectors.keySet()));
     }
 
     /**
@@ -77,7 +78,7 @@ public class ActuatorDataCollectionService {
 
             // Try to discover endpoints if none are available
             try {
-                endpoints = discoveryService.discoverEndpoints(service);
+                endpoints = discoveryService.discoverServiceEndpoints(service);
                 if (!endpoints.isEmpty()) {
                     service.setActuatorEndpoints(endpoints);
                     service = storage.updateService(service.getId(), service);
@@ -94,7 +95,7 @@ public class ActuatorDataCollectionService {
 
         // Process each endpoint with the appropriate collector
         for (ActuatorEndpoint endpoint : endpoints) {
-            ActuatorEndpointCollector collector = collectors.get(endpoint.getId());
+            ActuatorCollector collector = collectors.get(endpoint.getType());
             if (collector != null) {
                 try {
                     boolean success = collector.collectData(service, endpoint);
@@ -102,11 +103,11 @@ public class ActuatorDataCollectionService {
                         anySuccess = true;
                     }
                 } catch (Exception e) {
-                    logger.error("Error collecting data from endpoint {} for service {}: {}", 
-                            endpoint.getId(), service.getName(), e.getMessage());
+                    logger.error("Error collecting data from endpoint {} for service {}: {}",
+                                 endpoint.getType(), service.getName(), e.getMessage());
                 }
             } else {
-                logger.debug("No collector available for endpoint type: {}", endpoint.getId());
+                logger.debug("No collector available for endpoint type: {}", endpoint.getType());
             }
         }
 

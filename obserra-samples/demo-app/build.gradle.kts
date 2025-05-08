@@ -11,6 +11,9 @@ java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(17))
     }
+
+    sourceCompatibility = JavaVersion.VERSION_24
+    targetCompatibility = JavaVersion.VERSION_24
 }
 
 repositories {

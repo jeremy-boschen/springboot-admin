@@ -1,4 +1,4 @@
-package org.newtco.obserra.backend.collector;
+package org.newtco.obserra.backend.collector.actuator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,7 +22,7 @@ import java.time.Duration;
  * Collector for health status from the Spring Boot actuator health endpoint.
  */
 @Component
-public class HealthEndpointCollector implements ActuatorEndpointCollector {
+public class HealthEndpointCollector implements ActuatorCollector {
 
     private static final Logger logger = LoggerFactory.getLogger(HealthEndpointCollector.class);
     private static final String ENDPOINT_TYPE = "health";
@@ -42,8 +42,8 @@ public class HealthEndpointCollector implements ActuatorEndpointCollector {
 
         // Configure RestTemplate with timeout
         this.restTemplate = restTemplateBuilder
-                .setConnectTimeout(Duration.ofMillis(healthTimeoutMs))
-                .setReadTimeout(Duration.ofMillis(healthTimeoutMs))
+                .connectTimeout(Duration.ofMillis(healthTimeoutMs))
+                .readTimeout(Duration.ofMillis(healthTimeoutMs))
                 .build();
     }
 
@@ -54,7 +54,7 @@ public class HealthEndpointCollector implements ActuatorEndpointCollector {
 
     @Override
     public boolean canHandle(ActuatorEndpoint endpoint) {
-        return endpoint != null && ENDPOINT_TYPE.equals(endpoint.getId());
+        return endpoint != null && ENDPOINT_TYPE.equals(endpoint.getType());
     }
 
     @Override
@@ -62,7 +62,7 @@ public class HealthEndpointCollector implements ActuatorEndpointCollector {
         logger.debug("Checking health for service: {} ({})", service.getName(), service.getId());
 
         try {
-            String healthUrl = endpoint.getUrl();
+            String healthUrl = endpoint.getHref();
             ResponseEntity<String> response = restTemplate.getForEntity(healthUrl, String.class);
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {

@@ -1,11 +1,12 @@
 package org.newtco.obserra.backend.controller;
 
-import org.newtco.obserra.backend.model.ActuatorEndpoint;
-import org.newtco.obserra.backend.model.RegistrationSource;
+import jakarta.servlet.http.HttpServletRequest;
+import org.newtco.obserra.backend.collector.actuator.DiscoveryService;
 import org.newtco.obserra.backend.model.Service;
 import org.newtco.obserra.backend.model.ServiceStatus;
-import org.newtco.obserra.backend.service.ActuatorEndpointDiscoveryService;
 import org.newtco.obserra.backend.storage.Storage;
+import org.newtco.obserra.shared.model.ErrorResponse;
+import org.newtco.obserra.shared.model.ServiceRegistration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,132 +14,110 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
- * Controller for service registration.
- * This controller provides endpoints for services to register themselves with the server.
+ * Controller for service registration. This controller provides endpoints for services to register themselves with the
+ * server.
  */
 @RestController
-@RequestMapping("/api")
 public class ServiceRegistrationController {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceRegistrationController.class);
 
-    private final Storage storage;
-    private final ActuatorEndpointDiscoveryService discoveryService;
+    private final Storage          storage;
+    private final DiscoveryService discoveryService;
 
     @Autowired
-    public ServiceRegistrationController(Storage storage, ActuatorEndpointDiscoveryService discoveryService) {
+    public ServiceRegistrationController(Storage storage, DiscoveryService discoveryService) {
         this.storage = storage;
         this.discoveryService = discoveryService;
     }
 
+    private String buildRegistrationActuatorUrl(ServiceRegistration.Request registration, HttpServletRequest serverRequest) {
+        // If the client passed a full URL, use it
+        var actuatorUrl = registration.getActuatorUrl();
+        if (actuatorUrl.endsWith("/")) {
+            actuatorUrl = actuatorUrl.substring(0, actuatorUrl.length() - 1);
+        }
+
+        if (actuatorUrl.startsWith("http:") || actuatorUrl.startsWith("https:")) {
+            return actuatorUrl;
+        }
+
+        // Determine the calling client's hostname/port for constructing the callback URL
+        var clientHost = serverRequest.getHeader("X-Forwarded-For");
+        if (clientHost != null && !clientHost.isBlank()) {
+            logger.debug("appId:{} - Using X-Forwarded-For header for client host {}", registration.getAppId(), clientHost);
+        } else {
+            clientHost = serverRequest.getRemoteHost();
+            if (clientHost != null && !clientHost.isBlank()) {
+                logger.debug("appId:{} - Using remote host for client host {}", registration.getAppId(), clientHost);
+            } else {
+                clientHost = serverRequest.getRemoteAddr();
+                logger.debug("appId:{} - Using remote address for client host {}", registration.getAppId(), clientHost);
+            }
+        }
+
+        var clientPort = "";
+        if (registration.getActuatorPort() > 0) {
+            clientPort = String.valueOf(registration.getActuatorPort());
+        } else {
+            clientPort = serverRequest.getHeader("X-Forwarded-Port");
+            if (clientPort != null && !clientPort.isBlank()) {
+                logger.debug("appId:{} - Using X-Forwarded-Port header for client port {}", registration.getAppId(), clientPort);
+            } else {
+                clientPort = String.valueOf(serverRequest.getRemotePort());
+                logger.debug("appId:{} - Using remote port for client port {}", registration.getAppId(), clientPort);
+            }
+        }
+
+        var scheme = clientPort.endsWith("443") ? "https" : "http";
+
+        return scheme + "://" + clientHost + ":" + clientPort + (actuatorUrl.startsWith("/") ? "" : "/") + actuatorUrl;
+    }
+
     /**
-     * Register a service.
-     * This endpoint allows services to register themselves with the server.
+     * Register a service. This endpoint allows services to register themselves with the server.
      *
-     * @param registrationData the registration data
+     * @param registration the service registration registration
      * @return the registered service
      */
-    @PostMapping("/register")
-    public ResponseEntity<?> registerService(@RequestBody Map<String, Object> registrationData) {
+    @RequestMapping(
+            path = "/api/service/register",
+            method = RequestMethod.POST,
+            consumes = "application/json",
+            produces = "application/json"
+    )
+    public ResponseEntity<?> registerService(HttpServletRequest serverRequest, @RequestBody ServiceRegistration.Request registration) {
         try {
-            logger.info("Received registration request: {}", registrationData);
+            if (logger.isDebugEnabled()) {
+                logger.debug("appId: {} - Received service registration request: {}", registration.getAppId(), registration);
+            } else {
+                logger.info("appId: {} - Received service registration request", registration.getAppId());
+            }
 
             // Validate required fields
-            if (!registrationData.containsKey("name") || !registrationData.containsKey("actuatorUrl")) {
-                return ResponseEntity.badRequest().body(Map.of(
-                        "error", "Invalid registration data",
-                        "details", "Name and actuatorUrl are required"
-                ));
+            if (registration.getName() == null || registration.getActuatorUrl() == null) {
+                return ResponseEntity.badRequest()
+                        .body("Missing required fields: name, actuatorUrl");
             }
 
-            // Extract data
-            String name = (String) registrationData.get("name");
-            String actuatorUrl = (String) registrationData.get("actuatorUrl");
-            String appId = (String) registrationData.getOrDefault("appId", UUID.randomUUID().toString());
-            String version = (String) registrationData.getOrDefault("version", "unknown");
-            String healthCheckPath = (String) registrationData.getOrDefault("healthCheckPath", "/actuator/health");
-            String metricsPath = (String) registrationData.getOrDefault("metricsPath", "/actuator/metrics");
-            String logsPath = (String) registrationData.getOrDefault("logsPath", "/actuator/logfile");
-            String configPath = (String) registrationData.getOrDefault("configPath", "/actuator/env");
-            Integer healthCheckInterval = registrationData.containsKey("healthCheckInterval") ?
-                    Integer.parseInt(registrationData.get("healthCheckInterval").toString()) : 30;
-            Boolean autoRegister = (Boolean) registrationData.getOrDefault("autoRegister", false);
+            var actuatorUrl = buildRegistrationActuatorUrl(registration, serverRequest);
+            logger.info("appId:{} - Using callback actuator URL '{}'", registration.getAppId(), actuatorUrl);
 
-            // Extract connection details
-            String hostAddress = (String) registrationData.getOrDefault("hostAddress", null);
-            Integer port = registrationData.containsKey("port") ?
-                    Integer.parseInt(registrationData.get("port").toString()) : null;
-            String contextPath = (String) registrationData.getOrDefault("contextPath", "");
+            var service = new Service()
+                    .setName(registration.getName())
+                    .setAppId(registration.getAppId())
+                    .setVersion(registration.getVersion())
+                    .setActuatorUrl(actuatorUrl)
+                    .setAutoRegister(registration.isAutoRegister())
+                    .setCheckInterval(registration.getCheckInterval());
 
-            // If hostAddress or port is not provided, try to extract from actuatorUrl
-            if (hostAddress == null || port == null) {
-                try {
-                    java.net.URL url = new java.net.URL(actuatorUrl);
-                    hostAddress = hostAddress != null ? hostAddress : url.getHost();
-                    port = port != null ? port : (url.getPort() != -1 ? url.getPort() : 
-                            (url.getProtocol().equals("https") ? 443 : 80));
-                } catch (Exception e) {
-                    logger.error("Failed to parse actuator URL", e);
-                }
-            }
-
-            // Check if this service has already registered with an appId
-            Optional<Service> existingService = Optional.empty();
-            if (appId != null) {
-                existingService = storage.getServiceByAppId(appId);
-            }
-
-            // Create or update service
-            Service service;
-            if (existingService.isPresent()) {
-                service = existingService.get();
-                service.setName(name);
-                service.setVersion(version);
-                service.setActuatorUrl(actuatorUrl);
-                service.setHealthCheckPath(healthCheckPath);
-                service.setMetricsPath(metricsPath);
-                service.setLogsPath(logsPath);
-                service.setConfigPath(configPath);
-                service.setHostAddress(hostAddress);
-                service.setPort(port);
-                service.setContextPath(contextPath);
-                service.setHealthCheckInterval(healthCheckInterval);
-                service.setAutoRegister(autoRegister);
-
-                service = storage.updateService(service.getId(), service);
-                logger.info("Updated existing service: {} ({})", service.getName(), service.getAppId());
-            } else {
-                service = new Service();
-                service.setName(name);
-                service.setNamespace("default"); // Default namespace for directly registered services
-                service.setVersion(version);
-                service.setStatus(ServiceStatus.UNKNOWN);
-                service.setActuatorUrl(actuatorUrl);
-                service.setRegistrationSource(RegistrationSource.DIRECT);
-                service.setHostAddress(hostAddress);
-                service.setPort(port);
-                service.setContextPath(contextPath);
-                service.setAppId(appId);
-                service.setHealthCheckPath(healthCheckPath);
-                service.setMetricsPath(metricsPath);
-                service.setLogsPath(logsPath);
-                service.setConfigPath(configPath);
-                service.setAutoRegister(autoRegister);
-                service.setHealthCheckInterval(healthCheckInterval);
-
-                service = storage.createService(service);
-                logger.info("Registered new service: {} ({})", service.getName(), service.getAppId());
-            }
 
             // Discover available actuator endpoints
             try {
-                List<ActuatorEndpoint> endpoints = discoveryService.discoverEndpoints(service);
+                var endpoints = discoveryService.discoverServiceEndpoints(service);
                 if (!endpoints.isEmpty()) {
                     // Update the service with discovered endpoints
                     service.setActuatorEndpoints(endpoints);
@@ -151,18 +130,25 @@ public class ServiceRegistrationController {
                 logger.error("Error discovering actuator endpoints for service {}: {}", service.getName(), e.getMessage());
             }
 
+            // Unregister the existing service if it exists
+            storage.getServiceByAppId(registration.getAppId()).ifPresent(existing -> {
+                storage.deleteService(existing.getId());
+            });
+
+
+            service = storage.createService(service);
+            logger.info("Registered new service: {} ({})", service.getName(), service.getAppId());
+
+
             // Return the registered service
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                    "id", service.getId(),
-                    "name", service.getName(),
-                    "status", service.getStatus(),
-                    "registrationSource", service.getRegistrationSource(),
-                    "appId", service.getAppId()
-            ));
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new ServiceRegistration.Response(
+                            Long.toHexString(service.getId())
+                    ));
         } catch (Exception e) {
             logger.error("Error registering service", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to register service"));
+                    .body(new ErrorResponse("Failed to register service"));
         }
     }
 
@@ -171,14 +157,14 @@ public class ServiceRegistrationController {
      *
      * @return a list of all registered services
      */
-    @GetMapping("/services")
+    @GetMapping("/api/services")
     public ResponseEntity<?> getAllServices() {
         try {
             return ResponseEntity.ok(storage.getAllServices());
         } catch (Exception e) {
             logger.error("Error fetching services", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to fetch services"));
+                    .body(new ErrorResponse("Failed to fetch services"));
         }
     }
 
@@ -188,7 +174,7 @@ public class ServiceRegistrationController {
      * @param id the service ID
      * @return the service with the specified ID
      */
-    @GetMapping("/services/{id}")
+    @GetMapping("/api/services/{id}")
     public ResponseEntity<?> getService(@PathVariable Long id) {
         try {
             Optional<Service> service = storage.getService(id);
@@ -196,12 +182,42 @@ public class ServiceRegistrationController {
                 return ResponseEntity.ok(service.get());
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("error", "Service not found"));
+                        .body(new ErrorResponse("Service not found"));
             }
         } catch (Exception e) {
             logger.error("Error fetching service", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to fetch service"));
+                    .body(new ErrorResponse("Failed to fetch service"));
+        }
+    }
+
+    /**
+     * Deregister a service by appId. This endpoint allows services to deregister themselves when they shut down.
+     *
+     * @param registrationId Registration ID provided by the response to registration
+     * @return success or error response
+     */
+    @DeleteMapping("/api/service/unregister/{registrationId}")
+    public ResponseEntity<?> deregisterService(@PathVariable String registrationId) {
+        try {
+            logger.info("Received deregistration request for appId: {}", registrationId);
+
+            Optional<Service> serviceOpt = storage.getServiceByAppId(registrationId);
+            if (serviceOpt.isPresent()) {
+                Service service = serviceOpt.get();
+                service.setStatus(ServiceStatus.DOWN);
+                storage.updateService(service.getId(), service);
+                logger.info("Service deregistered: {} ({})", service.getName(), registrationId);
+                return ResponseEntity.ok().build();
+            } else {
+                logger.warn("Service not found for deregistration: {}", registrationId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ErrorResponse("Service not found"));
+            }
+        } catch (Exception e) {
+            logger.error("Error deregistering service", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("Failed to deregister service"));
         }
     }
 }

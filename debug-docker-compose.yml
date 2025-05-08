@@ -4,7 +4,7 @@ services:
   # Dashboard component
   obserra-dashboard:
     build:
-      context: ./obserra-dashboard
+      context: obserra-frontend
       dockerfile: Dockerfile
     container_name: obserra-dashboard
     ports:

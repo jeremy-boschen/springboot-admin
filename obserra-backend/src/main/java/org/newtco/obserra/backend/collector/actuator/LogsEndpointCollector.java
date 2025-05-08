@@ -1,4 +1,4 @@
-package org.newtco.obserra.backend.collector;
+package org.newtco.obserra.backend.collector.actuator;
 
 import org.newtco.obserra.backend.model.ActuatorEndpoint;
 import org.newtco.obserra.backend.model.Log;
@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
  * Collector for logs from the Spring Boot actuator logfile endpoint.
  */
 @Component
-public class LogsEndpointCollector implements ActuatorEndpointCollector {
+public class LogsEndpointCollector implements ActuatorCollector {
 
     private static final Logger logger = LoggerFactory.getLogger(LogsEndpointCollector.class);
     private static final String ENDPOINT_TYPE = "logfile";
@@ -49,8 +49,8 @@ public class LogsEndpointCollector implements ActuatorEndpointCollector {
 
         // Configure RestTemplate with timeout
         this.restTemplate = restTemplateBuilder
-                .setConnectTimeout(Duration.ofMillis(logsTimeoutMs))
-                .setReadTimeout(Duration.ofMillis(logsTimeoutMs))
+                .connectTimeout(Duration.ofMillis(logsTimeoutMs))
+                .readTimeout(Duration.ofMillis(logsTimeoutMs))
                 .build();
     }
 
@@ -61,7 +61,7 @@ public class LogsEndpointCollector implements ActuatorEndpointCollector {
 
     @Override
     public boolean canHandle(ActuatorEndpoint endpoint) {
-        return endpoint != null && ENDPOINT_TYPE.equals(endpoint.getId());
+        return endpoint != null && ENDPOINT_TYPE.equals(endpoint.getType());
     }
 
     @Override
@@ -69,7 +69,7 @@ public class LogsEndpointCollector implements ActuatorEndpointCollector {
         logger.debug("Collecting logs for service: {} ({})", service.getName(), service.getId());
 
         try {
-            String logsUrl = endpoint.getUrl();
+            String logsUrl = endpoint.getHref();
             ResponseEntity<String> response = restTemplate.getForEntity(logsUrl, String.class);
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {

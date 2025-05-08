@@ -29,6 +29,9 @@ dependencies {
 
     // Database dependencies removed - using in-memory storage instead
 
+    // Obserra shared module
+    implementation(project(":obserra-shared"))
+
     // Kubernetes client
     implementation("io.kubernetes:client-java:18.0.1")
 

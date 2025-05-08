@@ -1,5 +1,6 @@
 package org.newtco.obserra.backend.model;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,200 +21,152 @@ public class Service {
     private LocalDateTime lastSeen;
     private String clusterDns;
     private String actuatorUrl;
-    private String healthCheckPath;
     private RegistrationSource registrationSource = RegistrationSource.KUBERNETES;
-    private String hostAddress;
-    private Integer port;
-    private String contextPath;
     private String appId;
-    private String metricsPath;
-    private String logsPath;
-    private String configPath;
     private Boolean autoRegister = false;
-    private Integer healthCheckInterval;
+    private Duration checkInterval;
     private List<ActuatorEndpoint> actuatorEndpoints = new ArrayList<>();
 
     // Getters and Setters
-
     public Long getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public Service setId(Long id) {
         this.id = id;
+        return this;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
+    public Service setName(String name) {
         this.name = name;
+        return this;
     }
 
     public String getNamespace() {
         return namespace;
     }
 
-    public void setNamespace(String namespace) {
+    public Service setNamespace(String namespace) {
         this.namespace = namespace;
+        return this;
     }
 
     public String getVersion() {
         return version;
     }
 
-    public void setVersion(String version) {
+    public Service setVersion(String version) {
         this.version = version;
+        return this;
     }
 
     public String getPodName() {
         return podName;
     }
 
-    public void setPodName(String podName) {
+    public Service setPodName(String podName) {
         this.podName = podName;
+        return this;
     }
 
     public ServiceStatus getStatus() {
         return status;
     }
 
-    public void setStatus(ServiceStatus status) {
+    public Service setStatus(ServiceStatus status) {
         this.status = status;
+        return this;
     }
 
     public LocalDateTime getLastUpdated() {
         return lastUpdated;
     }
 
-    public void setLastUpdated(LocalDateTime lastUpdated) {
+    public Service setLastUpdated(LocalDateTime lastUpdated) {
         this.lastUpdated = lastUpdated;
+        return this;
     }
 
     public LocalDateTime getLastSeen() {
         return lastSeen;
     }
 
-    public void setLastSeen(LocalDateTime lastSeen) {
+    public Service setLastSeen(LocalDateTime lastSeen) {
         this.lastSeen = lastSeen;
+        return this;
     }
 
     public String getClusterDns() {
         return clusterDns;
     }
 
-    public void setClusterDns(String clusterDns) {
+    public Service setClusterDns(String clusterDns) {
         this.clusterDns = clusterDns;
+        return this;
     }
 
     public String getActuatorUrl() {
         return actuatorUrl;
     }
 
-    public void setActuatorUrl(String actuatorUrl) {
+    public Service setActuatorUrl(String actuatorUrl) {
         this.actuatorUrl = actuatorUrl;
-    }
-
-    public String getHealthCheckPath() {
-        return healthCheckPath;
-    }
-
-    public void setHealthCheckPath(String healthCheckPath) {
-        this.healthCheckPath = healthCheckPath;
+        return this;
     }
 
     public RegistrationSource getRegistrationSource() {
         return registrationSource;
     }
 
-    public void setRegistrationSource(RegistrationSource registrationSource) {
+    public Service setRegistrationSource(RegistrationSource registrationSource) {
         this.registrationSource = registrationSource;
+        return this;
     }
 
-    public String getHostAddress() {
-        return hostAddress;
-    }
-
-    public void setHostAddress(String hostAddress) {
-        this.hostAddress = hostAddress;
-    }
-
-    public Integer getPort() {
-        return port;
-    }
-
-    public void setPort(Integer port) {
-        this.port = port;
-    }
-
-    public String getContextPath() {
-        return contextPath;
-    }
-
-    public void setContextPath(String contextPath) {
-        this.contextPath = contextPath;
-    }
 
     public String getAppId() {
         return appId;
     }
 
-    public void setAppId(String appId) {
+    public Service setAppId(String appId) {
         this.appId = appId;
-    }
-
-    public String getMetricsPath() {
-        return metricsPath;
-    }
-
-    public void setMetricsPath(String metricsPath) {
-        this.metricsPath = metricsPath;
-    }
-
-    public String getLogsPath() {
-        return logsPath;
-    }
-
-    public void setLogsPath(String logsPath) {
-        this.logsPath = logsPath;
-    }
-
-    public String getConfigPath() {
-        return configPath;
-    }
-
-    public void setConfigPath(String configPath) {
-        this.configPath = configPath;
+        return this;
     }
 
     public Boolean getAutoRegister() {
         return autoRegister;
     }
 
-    public void setAutoRegister(Boolean autoRegister) {
+    public Service setAutoRegister(Boolean autoRegister) {
         this.autoRegister = autoRegister;
+        return this;
     }
 
-    public Integer getHealthCheckInterval() {
-        return healthCheckInterval;
+    public Duration getCheckInterval() {
+        return checkInterval;
     }
 
-    public void setHealthCheckInterval(Integer healthCheckInterval) {
-        this.healthCheckInterval = healthCheckInterval;
+    public Service setCheckInterval(Duration checkInterval) {
+        this.checkInterval = checkInterval;
+        return this;
     }
 
     public List<ActuatorEndpoint> getActuatorEndpoints() {
         return actuatorEndpoints;
     }
 
-    public void setActuatorEndpoints(List<ActuatorEndpoint> actuatorEndpoints) {
+    public Service setActuatorEndpoints(List<ActuatorEndpoint> actuatorEndpoints) {
         this.actuatorEndpoints = actuatorEndpoints;
+        return this;
     }
 
     /**
      * Add an actuator endpoint to the list of available endpoints
-     * 
+     *
      * @param endpoint The actuator endpoint to add
      */
     public void addActuatorEndpoint(ActuatorEndpoint endpoint) {
@@ -225,7 +178,7 @@ public class Service {
 
     /**
      * Find an actuator endpoint by its ID
-     * 
+     *
      * @param id The endpoint ID to find
      * @return The actuator endpoint, or null if not found
      */
@@ -234,7 +187,7 @@ public class Service {
             return null;
         }
         return this.actuatorEndpoints.stream()
-                .filter(endpoint -> id.equals(endpoint.getId()))
+                .filter(endpoint -> id.equals(endpoint.getType()))
                 .findFirst()
                 .orElse(null);
     }

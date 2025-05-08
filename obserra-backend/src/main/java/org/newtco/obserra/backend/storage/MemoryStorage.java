@@ -1,7 +1,6 @@
 package org.newtco.obserra.backend.storage;
 
 import org.newtco.obserra.backend.model.*;
-import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -166,9 +165,9 @@ public class MemoryStorage implements Storage {
                     }
                     
                     // Check based on interval if specified
-                    if (service.getHealthCheckInterval() != null && service.getLastSeen() != null) {
+                    if (service.getCheckInterval() != null && service.getLastSeen() != null) {
                         LocalDateTime nextCheckTime = service.getLastSeen()
-                                .plusSeconds(service.getHealthCheckInterval());
+                                .plusSeconds(service.getCheckInterval());
                         return LocalDateTime.now().isAfter(nextCheckTime);
                     }
                     

@@ -6,10 +6,11 @@ package org.newtco.obserra.backend.model;
  */
 public class ActuatorEndpoint {
 
-    private String id;
-    private String url;
+    private String  type;
+    private String  href;
     private boolean enabled;
     private boolean sensitive;
+    private boolean templated;
 
     /**
      * Default constructor
@@ -20,59 +21,75 @@ public class ActuatorEndpoint {
     /**
      * Constructor with all fields
      *
-     * @param id The endpoint identifier (e.g., "health", "metrics")
-     * @param url The full URL to the endpoint
-     * @param enabled Whether the endpoint is enabled
+     * @param type      The endpoint identifier (e.g., "health", "metrics")
+     * @param href      The full URL to the endpoint
+     * @param enabled   Whether the endpoint is enabled
      * @param sensitive Whether the endpoint is sensitive
+     * @param templated Whether the endpoint URL is templated
      */
-    public ActuatorEndpoint(String id, String url, boolean enabled, boolean sensitive) {
-        this.id = id;
-        this.url = url;
-        this.enabled = enabled;
+    public ActuatorEndpoint(String type, String href, boolean enabled, boolean sensitive, boolean templated) {
+        this.type      = type;
+        this.href      = href;
+        this.enabled   = enabled;
         this.sensitive = sensitive;
+        this.templated = templated;
     }
 
     // Getters and Setters
 
-    public String getId() {
-        return id;
+    public String getType() {
+        return type;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public ActuatorEndpoint setType(String type) {
+        this.type = type;
+        return this;
     }
 
-    public String getUrl() {
-        return url;
+    public String getHref() {
+        return href;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public ActuatorEndpoint setHref(String href) {
+        this.href = href;
+        return this;
     }
 
     public boolean isEnabled() {
         return enabled;
     }
 
-    public void setEnabled(boolean enabled) {
+    public ActuatorEndpoint setEnabled(boolean enabled) {
         this.enabled = enabled;
+        return this;
     }
 
     public boolean isSensitive() {
         return sensitive;
     }
 
-    public void setSensitive(boolean sensitive) {
+    public ActuatorEndpoint setSensitive(boolean sensitive) {
         this.sensitive = sensitive;
+        return this;
+    }
+
+    public boolean isTemplated() {
+        return templated;
+    }
+
+    public ActuatorEndpoint setTemplated(boolean templated) {
+        this.templated = templated;
+        return this;
     }
 
     @Override
     public String toString() {
         return "ActuatorEndpoint{" +
-                "id='" + id + '\'' +
-                ", url='" + url + '\'' +
+                "type='" + type + '\'' +
+                ", url='" + href + '\'' +
                 ", enabled=" + enabled +
                 ", sensitive=" + sensitive +
+                ", templated=" + templated +
                 '}';
     }
 }

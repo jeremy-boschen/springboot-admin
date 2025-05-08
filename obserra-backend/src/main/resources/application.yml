@@ -58,6 +58,10 @@ logging:
 
 # Application-specific configuration
 obserra:
+  discovery:
+    spring-boot:
+      timeout: 5s
+
   # Health check configuration
   health-check:
     interval-ms: 30000
@@ -70,7 +74,8 @@ obserra:
 
   # Service discovery configuration
   service-discovery:
-    interval-ms: 60000
+    interval: 6s
+    timeout: 5s
     kubernetes:
       enabled: false
 
